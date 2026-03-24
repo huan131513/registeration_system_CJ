@@ -18,7 +18,7 @@ export default function Home() {
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("春季");
   const [courseName, setCourseName] = useState("");
-  const [totalQuota, setTotalQuota] = useState(0);
+  const [totalQuota, setTotalQuota] = useState(20);
   const [volunteerSlots, setVolunteerSlots] = useState(0);
   const [waitlistSlots, setWaitlistSlots] = useState(0);
   const [directAdmitNames, setDirectAdmitNames] = useState<string[]>([]);
