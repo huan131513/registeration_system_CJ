@@ -47,6 +47,8 @@ export default function QuotaSettings({
   const [years, setYears] = useState(DEFAULT_YEARS);
   const [showAddYear, setShowAddYear] = useState(false);
   const [newYear, setNewYear] = useState("");
+  const [addYearError, setAddYearError] = useState("");
+  const [addCourseError, setAddCourseError] = useState("");
 
   const validate = (field: string, value: number) => {
     const newErrors = { ...errors };
@@ -60,22 +62,38 @@ export default function QuotaSettings({
 
   const handleAddCourse = () => {
     const name = newCourse.trim();
-    if (name && !courses.includes(name)) {
-      setCourses([...courses, name]);
-      onCourseNameChange(name);
-      setNewCourse("");
-      setShowAddCourse(false);
+    if (!name) return;
+    if (courses.includes(name)) {
+      setAddCourseError(`「${name}」已存在`);
+      setTimeout(() => {
+        setAddCourseError("");
+        setShowAddCourse(false);
+        setNewCourse("");
+      }, 1500);
+      return;
     }
+    setCourses([...courses, name]);
+    onCourseNameChange(name);
+    setNewCourse("");
+    setShowAddCourse(false);
   };
 
   const handleAddYear = () => {
     const y = newYear.trim();
-    if (y && !years.includes(y)) {
-      setYears([...years, y].sort());
-      onYearChange(y);
-      setNewYear("");
-      setShowAddYear(false);
+    if (!y) return;
+    if (years.includes(y)) {
+      setAddYearError(`「${y}」已存在`);
+      setTimeout(() => {
+        setAddYearError("");
+        setShowAddYear(false);
+        setNewYear("");
+      }, 1500);
+      return;
     }
+    setYears([...years, y].sort());
+    onYearChange(y);
+    setNewYear("");
+    setShowAddYear(false);
   };
 
   return (
@@ -122,28 +140,33 @@ export default function QuotaSettings({
             </div>
 
             {showAddYear && (
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  value={newYear}
-                  onChange={(e) => setNewYear(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddYear();
-                    }
-                  }}
-                  placeholder="輸入年份（如 116）"
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={handleAddYear}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  確定
-                </button>
+              <div className="mt-3 space-y-1.5">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newYear}
+                    onChange={(e) => { setNewYear(e.target.value); setAddYearError(""); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddYear();
+                      }
+                    }}
+                    placeholder="輸入年份（如 116）"
+                    className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${addYearError ? "border-red-400" : "border-gray-200"}`}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddYear}
+                    className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    確定
+                  </button>
+                </div>
+                {addYearError && (
+                  <p className="text-xs text-red-500 bg-red-50 px-3 py-1.5 rounded-lg">{addYearError}</p>
+                )}
               </div>
             )}
           </div>
@@ -214,28 +237,33 @@ export default function QuotaSettings({
           </div>
 
           {showAddCourse && (
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={newCourse}
-                onChange={(e) => setNewCourse(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddCourse();
-                  }
-                }}
-                placeholder="輸入新課程名稱"
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={handleAddCourse}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-              >
-                確定
-              </button>
+            <div className="mt-3 space-y-1.5">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCourse}
+                  onChange={(e) => { setNewCourse(e.target.value); setAddCourseError(""); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCourse();
+                    }
+                  }}
+                  placeholder="輸入新課程名稱"
+                  className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${addCourseError ? "border-red-400" : "border-gray-200"}`}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCourse}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  確定
+                </button>
+              </div>
+              {addCourseError && (
+                <p className="text-xs text-red-500 bg-red-50 px-3 py-1.5 rounded-lg">{addCourseError}</p>
+              )}
             </div>
           )}
         </div>

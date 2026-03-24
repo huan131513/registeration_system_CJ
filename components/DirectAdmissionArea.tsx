@@ -30,6 +30,7 @@ export default function DirectAdmissionArea({
 
     if (directAdmitNames.includes(name)) {
       setWarning(`「${name}」已在直接錄取名單中`);
+      setInput("");
       return;
     }
 
