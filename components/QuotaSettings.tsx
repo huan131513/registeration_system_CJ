@@ -1,15 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-const DEFAULT_COURSES = [
-  "樂齡體適能",
-  "歡唱人生",
-  "花編結療癒手作",
-  "科技運用-手機初階班",
-];
-
-const DEFAULT_YEARS = ["114", "115", "116"];
+import { useState, useEffect } from "react";
 
 interface QuotaSettingsProps {
   courseName: string;
@@ -41,14 +32,23 @@ export default function QuotaSettings({
   onSemesterChange,
 }: QuotaSettingsProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [courses, setCourses] = useState(DEFAULT_COURSES);
+  const [courses, setCourses] = useState<string[]>([]);
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [newCourse, setNewCourse] = useState("");
-  const [years, setYears] = useState(DEFAULT_YEARS);
+  const [years, setYears] = useState<string[]>([]);
   const [showAddYear, setShowAddYear] = useState(false);
   const [newYear, setNewYear] = useState("");
   const [addYearError, setAddYearError] = useState("");
   const [addCourseError, setAddCourseError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/options/years")
+      .then((r) => r.json())
+      .then((data) => setYears(data.years ?? []));
+    fetch("/api/options/courses")
+      .then((r) => r.json())
+      .then((data) => setCourses(data.courses ?? []));
+  }, []);
 
   const validate = (field: string, value: number) => {
     const newErrors = { ...errors };
@@ -60,10 +60,15 @@ export default function QuotaSettings({
     setErrors(newErrors);
   };
 
-  const handleAddCourse = () => {
+  const handleAddCourse = async () => {
     const name = newCourse.trim();
     if (!name) return;
-    if (courses.includes(name)) {
+    const res = await fetch("/api/options/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: name }),
+    });
+    if (res.status === 409 || courses.includes(name)) {
       setAddCourseError(`「${name}」已存在`);
       setTimeout(() => {
         setAddCourseError("");
@@ -78,10 +83,15 @@ export default function QuotaSettings({
     setShowAddCourse(false);
   };
 
-  const handleAddYear = () => {
+  const handleAddYear = async () => {
     const y = newYear.trim();
     if (!y) return;
-    if (years.includes(y)) {
+    const res = await fetch("/api/options/years", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: y }),
+    });
+    if (res.status === 409 || years.includes(y)) {
       setAddYearError(`「${y}」已存在`);
       setTimeout(() => {
         setAddYearError("");

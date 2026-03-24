@@ -7,6 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model YearOption {
+  id    String @id @default(cuid())
+  value String @unique
+}
+
+model CourseOption {
+  id    String @id @default(cuid())
+  value String @unique
+}
+
 model LotteryRun {
   id                 String   @id @default(cuid())
   courseName         String
