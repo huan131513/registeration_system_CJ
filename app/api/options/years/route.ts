@@ -22,6 +22,20 @@ export async function GET() {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const { value } = await req.json();
+    if (!value || typeof value !== "string") {
+      return NextResponse.json({ error: "Invalid value" }, { status: 400 });
+    }
+    await prisma.yearOption.deleteMany({ where: { value } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Failed to delete year" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { value } = await req.json();

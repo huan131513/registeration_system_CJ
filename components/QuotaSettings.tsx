@@ -60,6 +60,26 @@ export default function QuotaSettings({
     setErrors(newErrors);
   };
 
+  const handleDeleteYear = async (y: string) => {
+    await fetch("/api/options/years", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: y }),
+    });
+    setYears((prev) => prev.filter((v) => v !== y));
+    if (year === y) onYearChange("");
+  };
+
+  const handleDeleteCourse = async (c: string) => {
+    await fetch("/api/options/courses", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: c }),
+    });
+    setCourses((prev) => prev.filter((v) => v !== c));
+    if (courseName === c) onCourseNameChange("");
+  };
+
   const handleAddCourse = async () => {
     const name = newCourse.trim();
     if (!name) return;
@@ -150,7 +170,27 @@ export default function QuotaSettings({
             </div>
 
             {showAddYear && (
-              <div className="mt-3 space-y-1.5">
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {years.map((y) => (
+                    <span
+                      key={y}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700 text-sm font-medium"
+                    >
+                      {y}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteYear(y)}
+                        className="w-4 h-4 rounded-full hover:bg-red-100 flex items-center justify-center text-indigo-400 hover:text-red-500 transition-colors"
+                        aria-label={`刪除 ${y}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -247,7 +287,27 @@ export default function QuotaSettings({
           </div>
 
           {showAddCourse && (
-            <div className="mt-3 space-y-1.5">
+            <div className="mt-3 space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {courses.map((c) => (
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700 text-sm font-medium"
+                  >
+                    {c}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCourse(c)}
+                      className="w-4 h-4 rounded-full hover:bg-red-100 flex items-center justify-center text-indigo-400 hover:text-red-500 transition-colors"
+                      aria-label={`刪除 ${c}`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                ))}
+              </div>
               <div className="flex gap-2">
                 <input
                   type="text"
