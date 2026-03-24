@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LotteryRun {
+  id                 String   @id @default(cuid())
+  courseName         String
+  totalQuota         Int
+  volunteerSlots     Int
+  waitlistSlots      Int
+  totalRegistrants   Int
+  excludedCount      Int
+  directAdmitCount   Int
+  exemptionCount     Int
+  createdAt          DateTime @default(now())
+
+  results LotteryResult[]
+}
+
+model LotteryResult {
+  id             String     @id @default(cuid())
+  lotteryRunId   String
+  lotteryRun     LotteryRun @relation(fields: [lotteryRunId], references: [id], onDelete: Cascade)
+
+  name           String
+  phone          String
+  gender         String
+  emergencyName  String
+  emergencyPhone String
+  age            String
+  education      String
+  admissionType  String
+  order          Int
+
+  @@index([lotteryRunId])
+}
