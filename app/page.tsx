@@ -20,7 +20,7 @@ export default function Home() {
   const [courseName, setCourseName] = useState("");
   const [totalQuota, setTotalQuota] = useState(20);
   const [volunteerSlots, setVolunteerSlots] = useState(0);
-  const [waitlistSlots, setWaitlistSlots] = useState(0);
+  const [waitlistSlots, setWaitlistSlots] = useState(5);
   const [directAdmitNames, setDirectAdmitNames] = useState<string[]>([]);
 
   // Upload state
