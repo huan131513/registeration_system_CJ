@@ -40,14 +40,14 @@ export default function QuotaSettings({
   const [newYear, setNewYear] = useState("");
   const [addYearError, setAddYearError] = useState("");
   const [addCourseError, setAddCourseError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/options/years")
-      .then((r) => r.json())
-      .then((data) => setYears(data.years ?? []));
-    fetch("/api/options/courses")
-      .then((r) => r.json())
-      .then((data) => setCourses(data.courses ?? []));
+    setLoading(true);
+    Promise.all([
+      fetch("/api/options/years").then((r) => r.json()).then((data) => setYears(data.years ?? [])),
+      fetch("/api/options/courses").then((r) => r.json()).then((data) => setCourses(data.courses ?? [])),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const validate = (field: string, value: number) => {
@@ -61,6 +61,7 @@ export default function QuotaSettings({
   };
 
   const handleDeleteYear = async (y: string) => {
+    setLoading(true);
     await fetch("/api/options/years", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -68,9 +69,11 @@ export default function QuotaSettings({
     });
     setYears((prev) => prev.filter((v) => v !== y));
     if (year === y) onYearChange("");
+    setLoading(false);
   };
 
   const handleDeleteCourse = async (c: string) => {
+    setLoading(true);
     await fetch("/api/options/courses", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -78,16 +81,19 @@ export default function QuotaSettings({
     });
     setCourses((prev) => prev.filter((v) => v !== c));
     if (courseName === c) onCourseNameChange("");
+    setLoading(false);
   };
 
   const handleAddCourse = async () => {
     const name = newCourse.trim();
     if (!name) return;
+    setLoading(true);
     const res = await fetch("/api/options/courses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: name }),
     });
+    setLoading(false);
     if (res.status === 409 || courses.includes(name)) {
       setAddCourseError(`「${name}」已存在`);
       setTimeout(() => {
@@ -106,11 +112,13 @@ export default function QuotaSettings({
   const handleAddYear = async () => {
     const y = newYear.trim();
     if (!y) return;
+    setLoading(true);
     const res = await fetch("/api/options/years", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ value: y }),
     });
+    setLoading(false);
     if (res.status === 409 || years.includes(y)) {
       setAddYearError(`「${y}」已存在`);
       setTimeout(() => {
@@ -127,7 +135,7 @@ export default function QuotaSettings({
   };
 
   return (
-    <div className="space-y-5">
+    <div className={`space-y-5 ${loading ? "cursor-wait" : ""}`}>
       {/* Year & Semester */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
