@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import StepIndicator from "@/components/StepIndicator";
 import FileUploadSection from "@/components/FileUploadSection";
 import QuotaSettings from "@/components/QuotaSettings";
@@ -13,6 +13,17 @@ type Step = "settings" | "upload" | "confirm" | "results";
 
 export default function Home() {
   const [step, setStep] = useState<Step>("settings");
+  const [fading, setFading] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const navigateTo = useCallback((next: Step) => {
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    setFading(true);
+    fadeTimer.current = setTimeout(() => {
+      setStep(next);
+      setFading(false);
+    }, 500); // 500ms out + 500ms in ≈ 1s total
+  }, []);
 
   // Settings state
   const [year, setYear] = useState(String(new Date().getFullYear() - 1911));
@@ -39,8 +50,8 @@ export default function Home() {
   const canProceedToConfirm = registrants.length > 0 && pointsTable.length > 0;
 
   const handleStartLottery = () => {
-    setStep("confirm");
-    setShowConfirm(true);
+    navigateTo("confirm");
+    setTimeout(() => setShowConfirm(true), 500);
   };
 
   const handleConfirmLottery = async () => {
@@ -73,7 +84,7 @@ export default function Home() {
       setResults(data.results);
       setUpdatedPoints(data.updatedPoints || []);
       setShowConfirm(false);
-      setStep("results");
+      navigateTo("results");
     } catch {
       setError("網路錯誤，請重試");
     } finally {
@@ -131,7 +142,7 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    setStep("settings");
+    navigateTo("settings");
     setRegistrants([]);
     setPointsTable([]);
     setAttendanceNames([]);
@@ -170,7 +181,9 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-6 py-10">
         <StepIndicator currentStep={step} />
 
-        {/* Step 1: Settings (was Step 2) */}
+        <div className={`transition-opacity duration-500 ${fading ? "opacity-0" : "opacity-100"}`}>
+
+        {/* Step 1: Settings */}
         {step === "settings" && (
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-lg font-bold text-gray-800 mb-1">
@@ -199,7 +212,7 @@ export default function Home() {
               <button
                 type="button"
                 disabled={!canProceedToUpload}
-                onClick={() => setStep("upload")}
+                onClick={() => navigateTo("upload")}
                 className="px-6 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 下一步 →
@@ -248,7 +261,7 @@ export default function Home() {
             <div className="mt-8 flex justify-between">
               <button
                 type="button"
-                onClick={() => setStep("settings")}
+                onClick={() => navigateTo("settings")}
                 className="px-6 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 ← 上一步
@@ -265,12 +278,14 @@ export default function Home() {
           </div>
         )}
 
+        </div>{/* end transition wrapper */}
+
         {/* Step 3: Confirm Modal */}
         <ConfirmationModal
           open={showConfirm}
           onClose={() => {
             setShowConfirm(false);
-            setStep("upload");
+            navigateTo("upload");
           }}
           onConfirm={handleConfirmLottery}
           loading={lotteryLoading}
