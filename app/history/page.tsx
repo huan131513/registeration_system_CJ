@@ -130,6 +130,14 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [exportingId, setExportingId] = useState<string | null>(null);
+  // folder rename
+  const [folderLabels, setFolderLabels] = useState<Record<string, string>>({});
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  // delete confirm
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -142,12 +150,14 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!authed) return;
     setLoading(true);
-    fetch("/api/history")
-      .then((r) => r.json())
-      .then((data) => {
-        const list: LotteryRunSummary[] = data.runs || [];
+    Promise.all([
+      fetch("/api/history").then((r) => r.json()),
+      fetch("/api/history/folder-labels").then((r) => r.json()),
+    ])
+      .then(([histData, labelData]) => {
+        const list: LotteryRunSummary[] = histData.runs || [];
         setRuns(list);
-        // auto-open all folders
+        setFolderLabels(labelData.labels || {});
         const folders = new Set(list.map((r) => folderKey(r)));
         setOpenFolders(folders);
       })
@@ -177,6 +187,39 @@ export default function HistoryPage() {
       else next.add(key);
       return next;
     });
+  };
+
+  const startRename = (key: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingKey(key);
+    setRenameValue(folderLabels[key] ?? key);
+    setTimeout(() => renameInputRef.current?.select(), 30);
+  };
+
+  const commitRename = async () => {
+    if (!renamingKey) return;
+    const label = renameValue.trim();
+    if (!label) { setRenamingKey(null); return; }
+    await fetch("/api/history/folder-labels", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: renamingKey, label }),
+    });
+    setFolderLabels((prev) => ({ ...prev, [renamingKey]: label }));
+    setRenamingKey(null);
+  };
+
+  const handleDelete = async () => {
+    if (!pendingDeleteId) return;
+    setDeleting(true);
+    try {
+      await fetch(`/api/history/${pendingDeleteId}`, { method: "DELETE" });
+      setRuns((prev) => prev.filter((r) => r.id !== pendingDeleteId));
+      if (selectedRun?.id === pendingDeleteId) setSelectedRun(null);
+    } finally {
+      setDeleting(false);
+      setPendingDeleteId(null);
+    }
   };
 
   const loadDetail = async (id: string) => {
@@ -253,26 +296,55 @@ export default function HistoryPage() {
             {folderKeys.map((key) => (
               <div key={key} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
                 {/* Folder header */}
-                <button
-                  type="button"
-                  onClick={() => toggleFolder(key)}
-                  className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`transition-transform duration-200 ${openFolders.has(key) ? "rotate-90" : "rotate-0"}`}>
+                <div className="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => toggleFolder(key)}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <div className={`transition-transform duration-200 shrink-0 ${openFolders.has(key) ? "rotate-90" : "rotate-0"}`}>
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
-                    <svg className="w-5 h-5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-indigo-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
                     </svg>
-                    <span className="font-semibold text-gray-800">{key}</span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {renamingKey === key ? (
+                      <input
+                        ref={renameInputRef}
+                        type="text"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); commitRename(); }
+                          if (e.key === "Escape") setRenamingKey(null);
+                        }}
+                        onBlur={commitRename}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-semibold text-gray-800 bg-white border border-indigo-400 rounded-lg px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 flex-1"
+                      />
+                    ) : (
+                      <span className="font-semibold text-gray-800 truncate">
+                        {folderLabels[key] ?? key}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
                       {grouped[key].length} 筆
                     </span>
-                  </div>
-                </button>
+                  </button>
+                  {/* Rename button */}
+                  <button
+                    type="button"
+                    onClick={(e) => startRename(key, e)}
+                    title="重新命名資料夾"
+                    className="ml-3 p-1.5 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                </div>
 
                 {/* Folder contents */}
                 {openFolders.has(key) && (
@@ -314,6 +386,17 @@ export default function HistoryPage() {
                             )}
                             匯出
                           </button>
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setPendingDeleteId(run.id); }}
+                            title="刪除此紀錄"
+                            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -321,6 +404,39 @@ export default function HistoryPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Delete Confirm Modal */}
+        {pendingDeleteId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPendingDeleteId(null)} />
+            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">確定要刪除？</h3>
+              <p className="text-sm text-gray-500 mb-6">此操作無法復原，該筆抽籤紀錄將永久刪除。</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteId(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {deleting ? "刪除中..." : "確定刪除"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

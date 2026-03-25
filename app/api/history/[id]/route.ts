@@ -25,3 +25,20 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await prisma.lotteryRun.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("History delete error:", error);
+    return NextResponse.json(
+      { error: "刪除紀錄時發生錯誤" },
+      { status: 500 }
+    );
+  }
+}

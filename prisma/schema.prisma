@@ -12,6 +12,12 @@ model YearOption {
   value String @unique
 }
 
+model FolderLabel {
+  id    String @id @default(cuid())
+  key   String @unique  // e.g. "114年 春季"
+  label String          // custom display name
+}
+
 model CourseOption {
   id    String @id @default(cuid())
   value String @unique
