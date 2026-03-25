@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import CustomSelect from "./CustomSelect";
 
 interface QuotaSettingsProps {
   courseName: string;
@@ -151,35 +152,25 @@ export default function QuotaSettings({
     <div className={`space-y-5 ${loading ? "cursor-wait" : ""}`}>
       {/* Year & Semester */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Year */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             選擇年份
             <span className="text-red-500 ml-0.5">*</span>
           </label>
-          <div
-            className={`rounded-2xl transition-all duration-200 ${
-              showAddYear ? "bg-indigo-50 p-3 ring-1 ring-indigo-100" : ""
-            }`}
-          >
+          <div className={`rounded-2xl transition-all duration-200 ${showAddYear ? "bg-indigo-50 p-3 ring-1 ring-indigo-100" : ""}`}>
             <div className="flex gap-2">
-              <select
+              <CustomSelect
                 value={year}
-                onChange={(e) => onYearChange(e.target.value)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition appearance-none"
-              >
-                <option value="">請選擇年份</option>
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
+                options={years}
+                placeholder="請選擇年份"
+                onChange={onYearChange}
+                onDelete={handleDeleteYear}
+                disabled={loading}
+              />
               <button
                 type="button"
-                onClick={() => {
-                  setShowAddYear(!showAddYear);
-                  setNewYear("");
-                }}
+                onClick={() => { setShowAddYear(!showAddYear); setNewYear(""); setAddYearError(""); }}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                   showAddYear
                     ? "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
@@ -191,38 +182,13 @@ export default function QuotaSettings({
             </div>
 
             {showAddYear && (
-              <div className="mt-3 space-y-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {years.map((y) => (
-                    <span
-                      key={y}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700 text-sm font-medium"
-                    >
-                      {y}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteYear(y)}
-                        className="w-4 h-4 rounded-full hover:bg-red-100 flex items-center justify-center text-indigo-400 hover:text-red-500 transition-colors"
-                        aria-label={`刪除 ${y}`}
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
-                </div>
+              <div className="mt-3 space-y-1.5">
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={newYear}
                     onChange={(e) => { setNewYear(e.target.value); setAddYearError(""); }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddYear();
-                      }
-                    }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddYear(); } }}
                     placeholder="輸入年份（如 116）"
                     className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${addYearError ? "border-red-400" : "border-gray-200"}`}
                     autoFocus
@@ -243,6 +209,7 @@ export default function QuotaSettings({
           </div>
         </div>
 
+        {/* Semester */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             選擇季度
@@ -273,30 +240,19 @@ export default function QuotaSettings({
           課程名稱
           <span className="text-red-500 ml-0.5">*</span>
         </label>
-        <div
-          className={`rounded-2xl transition-all duration-200 ${
-            showAddCourse ? "bg-indigo-50 p-3 ring-1 ring-indigo-100" : ""
-          }`}
-        >
+        <div className={`rounded-2xl transition-all duration-200 ${showAddCourse ? "bg-indigo-50 p-3 ring-1 ring-indigo-100" : ""}`}>
           <div className="flex gap-2">
-            <select
+            <CustomSelect
               value={courseName}
-              onChange={(e) => onCourseNameChange(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition appearance-none"
-            >
-              <option value="">請選擇課程</option>
-              {courses.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              options={courses}
+              placeholder="請選擇課程"
+              onChange={onCourseNameChange}
+              onDelete={handleDeleteCourse}
+              disabled={loading}
+            />
             <button
               type="button"
-              onClick={() => {
-                setShowAddCourse(!showAddCourse);
-                setNewCourse("");
-              }}
+              onClick={() => { setShowAddCourse(!showAddCourse); setNewCourse(""); setAddCourseError(""); }}
               className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                 showAddCourse
                   ? "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
@@ -308,38 +264,13 @@ export default function QuotaSettings({
           </div>
 
           {showAddCourse && (
-            <div className="mt-3 space-y-2">
-              <div className="flex flex-wrap gap-1.5">
-                {courses.map((c) => (
-                  <span
-                    key={c}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700 text-sm font-medium"
-                  >
-                    {c}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCourse(c)}
-                      className="w-4 h-4 rounded-full hover:bg-red-100 flex items-center justify-center text-indigo-400 hover:text-red-500 transition-colors"
-                      aria-label={`刪除 ${c}`}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
-              </div>
+            <div className="mt-3 space-y-1.5">
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newCourse}
                   onChange={(e) => { setNewCourse(e.target.value); setAddCourseError(""); }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddCourse();
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddCourse(); } }}
                   placeholder="輸入新課程名稱"
                   className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${addCourseError ? "border-red-400" : "border-gray-200"}`}
                   autoFocus
@@ -401,9 +332,7 @@ export default function QuotaSettings({
               validate("volunteerSlots", v, raw);
             }}
             placeholder="例：5"
-            className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-              errors.volunteerSlots ? "border-red-300" : "border-gray-200"
-            }`}
+            className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.volunteerSlots ? "border-red-300" : "border-gray-200"}`}
           />
           {errors.volunteerSlots && (
             <p className="mt-1 text-xs text-red-500">{errors.volunteerSlots}</p>
