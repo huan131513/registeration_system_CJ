@@ -130,6 +130,11 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [attendanceRun, setAttendanceRun] = useState<LotteryRunSummary | null>(null);
+  const [attClassDates, setAttClassDates] = useState<string[]>([]);
+  const [attDateInputVal, setAttDateInputVal] = useState("");
+  const [attDateError, setAttDateError] = useState("");
+  const [attLoading, setAttLoading] = useState(false);
   const [processRunId, setProcessRunId] = useState<string | null>(null);
   const [processDetail, setProcessDetail] = useState<LotteryRunDetail | null>(null);
   const [processLoading, setProcessLoading] = useState(false);
@@ -294,6 +299,73 @@ export default function HistoryPage() {
     }
   };
 
+  const parseMonthDay = (val: string): boolean => {
+    const match = val.trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (!match) return false;
+    const m = parseInt(match[1]);
+    const d = parseInt(match[2]);
+    const date = new Date(new Date().getFullYear(), m - 1, d);
+    return date.getMonth() === m - 1 && date.getDate() === d;
+  };
+
+  const addAttDate = (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    if (!parseMonthDay(trimmed)) {
+      setAttDateError("格式錯誤，請輸入如 3/25");
+      setTimeout(() => { setAttDateError(""); setAttDateInputVal(""); }, 2000);
+      return;
+    }
+    setAttDateError("");
+    setAttClassDates((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+    setAttDateInputVal("");
+  };
+
+  const addAttNextWeek = () => {
+    if (attClassDates.length === 0) return;
+    const last = attClassDates[attClassDates.length - 1];
+    const [m, d] = last.split("/").map(Number);
+    const date = new Date(new Date().getFullYear(), m - 1, d);
+    date.setDate(date.getDate() + 7);
+    const next = `${date.getMonth() + 1}/${date.getDate()}`;
+    if (!attClassDates.includes(next)) setAttClassDates([...attClassDates, next]);
+  };
+
+  const handleExportAttendance = async () => {
+    if (!attendanceRun) return;
+    setAttLoading(true);
+    try {
+      const res = await fetch(`/api/history/${attendanceRun.id}`);
+      const data = await res.json();
+      const detail: LotteryRunDetail = data.run;
+      const admitted = detail.results.filter((r) => r.admissionType !== "waitlist");
+      const exportRes = await fetch("/api/export/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: detail.year,
+          semester: detail.semester,
+          courseName: detail.courseName,
+          students: admitted.map((r) => ({ name: r.name, gender: r.gender })),
+          dates: attClassDates,
+        }),
+      });
+      if (!exportRes.ok) throw new Error("匯出失敗");
+      const blob = await exportRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${detail.year}${detail.semester}-${detail.courseName || "點名單"}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setAttendanceRun(null);
+    } catch {
+      alert("匯出失敗，請重試");
+    } finally {
+      setAttLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="bg-white border-b border-gray-200">
@@ -405,9 +477,6 @@ export default function HistoryPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 ml-4 flex-shrink-0 flex-wrap justify-end">
-                            <span className="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium">
-                              報名 {run.totalRegistrants} 人
-                            </span>
                             <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
                               錄取 {run.totalQuota} 人
                             </span>
@@ -442,7 +511,17 @@ export default function HistoryPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                               )}
-                              匯出
+                              匯出抽籤結果
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setAttClassDates([]); setAttDateInputVal(""); setAttDateError(""); setAttendanceRun(run); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition-colors"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              </svg>
+                              匯出點名單
                             </button>
                             <button
                               type="button"
@@ -579,6 +658,91 @@ export default function HistoryPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
                 >
                   {deletingFolder ? "刪除中..." : "確定刪除"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attendance Export Modal */}
+        {attendanceRun && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-gray-800">輸出上課點名單</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  錄取 {attendanceRun.totalQuota} 人 · {attendanceRun.year}{attendanceRun.semester} · {attendanceRun.courseName}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  上課日期
+                  <span className="text-xs text-gray-400 font-normal ml-2">（可用 + 新增下一週）</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="月/日（例：3/25）"
+                    value={attDateInputVal}
+                    onChange={(e) => { setAttDateInputVal(e.target.value); setAttDateError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAttDate(attDateInputVal); } }}
+                    className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${attDateError ? "border-red-300" : "border-gray-200"}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addAttDate(attDateInputVal)}
+                    className="px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+                  >
+                    新增
+                  </button>
+                </div>
+                {attDateError && (
+                  <p className="text-xs text-red-500 mt-1.5">{attDateError}</p>
+                )}
+                {attClassDates.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                    {attClassDates.map((d, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-medium border border-teal-100">
+                        {d}
+                        <button
+                          type="button"
+                          onClick={() => setAttClassDates((prev) => prev.filter((_, j) => j !== i))}
+                          className="w-3.5 h-3.5 rounded-full hover:bg-teal-200 flex items-center justify-center"
+                        >
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addAttNextWeek}
+                      className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full border border-dashed border-teal-300 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      下一週
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceRun(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportAttendance}
+                  disabled={attLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-60"
+                >
+                  {attLoading ? "產生中..." : "匯出 Excel"}
                 </button>
               </div>
             </div>

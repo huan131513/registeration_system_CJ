@@ -64,15 +64,54 @@ export default function ResultsTable({
 }: ResultsTableProps) {
   const [showReport, setShowReport] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-  const [datesInput, setDatesInput] = useState("");
+  const [classDates, setClassDates] = useState<string[]>([]);
+  const [dateInputVal, setDateInputVal] = useState("");
+  const [dateInputError, setDateInputError] = useState("");
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  const fmtDate = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+
+  const parseMonthDay = (val: string): { m: number; d: number } | null => {
+    const match = val.trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (!match) return null;
+    const m = parseInt(match[1]);
+    const d = parseInt(match[2]);
+    const date = new Date(new Date().getFullYear(), m - 1, d);
+    if (date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+    return { m, d };
+  };
+
+  const addDate = (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    if (!parseMonthDay(trimmed)) {
+      setDateInputError("格式錯誤，請輸入如 3/25");
+      setTimeout(() => { setDateInputError(""); setDateInputVal(""); }, 2000);
+      return;
+    }
+    setDateInputError("");
+    setClassDates((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+    setDateInputVal("");
+  };
+
+  const addNextWeek = () => {
+    if (classDates.length === 0) return;
+    const last = classDates[classDates.length - 1];
+    const [m, d] = last.split("/").map(Number);
+    const date = new Date(new Date().getFullYear(), m - 1, d);
+    date.setDate(date.getDate() + 7);
+    const next = fmtDate(date);
+    if (!classDates.includes(next)) setClassDates([...classDates, next]);
+  };
+
+  const removeDate = (idx: number) => {
+    setClassDates((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handleExportAttendance = async () => {
     setAttendanceLoading(true);
     const admitted = results.filter((r) => r.admissionType !== "waitlist");
-    const dates = datesInput
-      .split(/[、,，\s]+/)
-      .map((d) => d.trim())
+    const dates = classDates
       .filter(Boolean);
     try {
       const res = await fetch("/api/export/attendance", {
@@ -139,7 +178,7 @@ export default function ResultsTable({
           </button>
           <button
             type="button"
-            onClick={() => { setDatesInput(""); setShowAttendanceModal(true); }}
+            onClick={() => { setClassDates([]); setDateInputVal(""); setDateInputError(""); setShowAttendanceModal(true); }}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,22 +378,54 @@ export default function ResultsTable({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 上課日期
-                <span className="text-xs text-gray-400 font-normal ml-2">（以頓號或逗號分隔）</span>
+                <span className="text-xs text-gray-400 font-normal ml-2">（可用 + 新增下一週）</span>
               </label>
-              <textarea
-                rows={3}
-                value={datesInput}
-                onChange={(e) => setDatesInput(e.target.value)}
-                placeholder="例：4/13、4/20、4/27、5/4、5/11、5/18"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none"
-              />
-              {datesInput.trim() && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {datesInput.split(/[、,，\s]+/).filter(Boolean).map((d, i) => (
-                    <span key={i} className="px-2 py-0.5 bg-teal-50 text-teal-700 rounded-full text-xs font-medium border border-teal-100">
-                      {d.trim()}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="月/日（例：3/25）"
+                  value={dateInputVal}
+                  onChange={(e) => { setDateInputVal(e.target.value); setDateInputError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDate(dateInputVal); } }}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition ${dateInputError ? "border-red-300" : "border-gray-200"}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => addDate(dateInputVal)}
+                  className="px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+                >
+                  新增
+                </button>
+              </div>
+              {dateInputError && (
+                <p className="text-xs text-red-500 mt-1.5">{dateInputError}</p>
+              )}
+              {classDates.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                  {classDates.map((d, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-medium border border-teal-100">
+                      {d}
+                      <button
+                        type="button"
+                        onClick={() => removeDate(i)}
+                        className="w-3.5 h-3.5 rounded-full hover:bg-teal-200 flex items-center justify-center"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </span>
                   ))}
+                  <button
+                    type="button"
+                    onClick={addNextWeek}
+                    className="inline-flex items-center gap-0.5 px-2.5 py-1 rounded-full border border-dashed border-teal-300 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    下一週
+                  </button>
                 </div>
               )}
             </div>
