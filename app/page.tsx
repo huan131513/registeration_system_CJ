@@ -108,7 +108,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${courseName || "抽籤結果"}.xlsx`;
+      a.download = `${year}${semester}${courseName || "抽籤結果"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

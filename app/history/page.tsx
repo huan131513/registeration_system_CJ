@@ -121,7 +121,7 @@ export default function HistoryPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${detail.courseName || "抽籤結果"}.xlsx`;
+      a.download = `${detail.year}${detail.semester}${detail.courseName || "抽籤結果"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
