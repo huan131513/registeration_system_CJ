@@ -1,16 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Registrant, PointsEntry } from "@/lib/types";
-
-const POINTS_CACHE_KEY = "pointsTable_cache";
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-interface PointsCache {
-  data: PointsEntry[];
-  fileName: string;
-  timestamp: number;
-}
 
 interface FileUploadSectionProps {
   onRegistrationParsed: (data: Registrant[]) => void;
@@ -191,26 +182,6 @@ export default function FileUploadSection({
   const [ptsFileName, setPtsFileName] = useState<string | null>(null);
   const [attFileName, setAttFileName] = useState<string | null>(null);
 
-  // 讀取 localStorage 積分表緩存
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(POINTS_CACHE_KEY);
-      if (!raw) return;
-      const cache: PointsCache = JSON.parse(raw);
-      const age = Date.now() - cache.timestamp;
-      if (age > CACHE_TTL_MS) {
-        localStorage.removeItem(POINTS_CACHE_KEY);
-        return;
-      }
-      // Auto-restore（靜默載入，不顯示提示）
-      setPtsFileName(cache.fileName);
-      onPointsParsed(cache.data);
-    } catch {
-      localStorage.removeItem(POINTS_CACHE_KEY);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const uploadFile = async (
     file: File,
     type: string
@@ -254,11 +225,6 @@ export default function FileUploadSection({
         const data = result.data as PointsEntry[];
         setPtsFileName(files[0].name);
         onPointsParsed(data);
-        // 寫入 localStorage 緩存（1小時）
-        try {
-          const cache: PointsCache = { data, fileName: files[0].name, timestamp: Date.now() };
-          localStorage.setItem(POINTS_CACHE_KEY, JSON.stringify(cache));
-        } catch { /* storage full, ignore */ }
       }
     } catch {
       setPtsError("上傳失敗，請重試");
