@@ -331,7 +331,7 @@ export default function QuotaSettings({
               onVolunteerSlotsChange(v);
               validate("volunteerSlots", v, raw);
             }}
-            placeholder="例：5"
+            placeholder=""
             className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.volunteerSlots ? "border-red-300" : "border-gray-200"}`}
           />
           {errors.volunteerSlots && (
