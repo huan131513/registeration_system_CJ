@@ -22,6 +22,7 @@ interface UploadCardProps {
   error: string | null;
   loading: boolean;
   fileName: string | null;
+  fileNames?: string[];
   onUpload: (files: FileList) => void;
 }
 
@@ -35,10 +36,13 @@ function UploadCard({
   error,
   loading,
   fileName,
+  fileNames,
   onUpload,
 }: UploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const hasMultipleFiles = fileNames && fileNames.length > 1;
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -98,20 +102,40 @@ function UploadCard({
       <h3 className="text-sm font-semibold text-gray-700 mb-1">{title}</h3>
 
       {/* 上傳成功：顯示檔名；否則顯示說明文字 */}
-      <p
-        className={`text-xs mb-3 break-all ${
-          isFileNameShown
-            ? "text-green-700 font-medium"
-            : "text-gray-500"
-        }`}
-      >
+      <div className="mb-3 relative flex items-center justify-center">
         {isFileNameShown && (
-          <svg className="w-3 h-3 inline mr-1 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 mr-1 shrink-0 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         )}
-        {displayDescription}
-      </p>
+        <span
+          className={`text-xs break-all ${isFileNameShown ? "text-green-700 font-medium" : "text-gray-500"} ${hasMultipleFiles ? "underline decoration-dashed cursor-pointer" : ""}`}
+          onMouseEnter={() => hasMultipleFiles && setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          {displayDescription}
+        </span>
+
+        {/* 檔名 tooltip */}
+        {hasMultipleFiles && showTooltip && (
+          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 w-max max-w-xs bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-left">
+            <p className="text-xs font-semibold text-gray-600 mb-2">已上傳的檔案</p>
+            <ul className="space-y-1">
+              {fileNames!.map((name, i) => (
+                <li key={i} className="flex items-center gap-1.5 text-xs text-gray-700">
+                  <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {name}
+                </li>
+              ))}
+            </ul>
+            {/* arrow */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white" />
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 -mt-px" />
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="mb-3 px-3 py-2 rounded-lg bg-red-100 text-red-700 text-xs">
@@ -181,6 +205,7 @@ export default function FileUploadSection({
   const [regFileName, setRegFileName] = useState<string | null>(null);
   const [ptsFileName, setPtsFileName] = useState<string | null>(null);
   const [attFileName, setAttFileName] = useState<string | null>(null);
+  const [attFileNames, setAttFileNames] = useState<string[]>([]);
 
   const uploadFile = async (
     file: File,
@@ -252,6 +277,8 @@ export default function FileUploadSection({
           keySet.add(`${p.name}|${p.phone}`);
         }
       }
+      const names = Array.from(files).map((f) => f.name);
+      setAttFileNames(names);
       if (files.length === 1) {
         setAttFileName(files[0].name);
       } else {
@@ -302,6 +329,7 @@ export default function FileUploadSection({
           error={attError}
           loading={attLoading}
           fileName={attFileName}
+          fileNames={attFileNames}
           onUpload={handleAttendance}
         />
       </div>
