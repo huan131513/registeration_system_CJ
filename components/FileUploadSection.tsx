@@ -331,14 +331,6 @@ export default function FileUploadSection({
             fileName={ptsFileName}
             onUpload={handlePoints}
           />
-          {ptsCacheAge !== null && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              已從緩存自動載入（{ptsCacheAge} 分鐘前上傳）
-            </div>
-          )}
         </div>
         <UploadCard
           title="過去上課名單"
