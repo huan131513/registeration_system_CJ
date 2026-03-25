@@ -138,9 +138,12 @@ export default function HistoryPage() {
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
-  // delete confirm
+  // delete run confirm
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // delete folder confirm
+  const [pendingDeleteFolder, setPendingDeleteFolder] = useState<string | null>(null);
+  const [deletingFolder, setDeletingFolder] = useState(false);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -222,6 +225,20 @@ export default function HistoryPage() {
     } finally {
       setDeleting(false);
       setPendingDeleteId(null);
+    }
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!pendingDeleteFolder) return;
+    setDeletingFolder(true);
+    const ids = (grouped[pendingDeleteFolder] ?? []).map((r) => r.id);
+    try {
+      await Promise.all(ids.map((id) => fetch(`/api/history/${id}`, { method: "DELETE" })));
+      setRuns((prev) => prev.filter((r) => folderKey(r) !== pendingDeleteFolder));
+      if (selectedRun && ids.includes(selectedRun.id)) setSelectedRun(null);
+    } finally {
+      setDeletingFolder(false);
+      setPendingDeleteFolder(null);
     }
   };
 
@@ -357,6 +374,17 @@ export default function HistoryPage() {
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  {/* Delete folder button */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setPendingDeleteFolder(key); }}
+                    title="刪除整個資料夾"
+                    className="ml-1 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
@@ -513,6 +541,44 @@ export default function HistoryPage() {
                   className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
                 >
                   {deleting ? "刪除中..." : "確定刪除"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Folder Confirm Modal */}
+        {pendingDeleteFolder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPendingDeleteFolder(null)} />
+            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">刪除整個資料夾？</h3>
+              <p className="text-sm text-gray-500 mb-1">
+                「{folderLabels[pendingDeleteFolder] ?? pendingDeleteFolder}」
+              </p>
+              <p className="text-sm text-red-500 mb-6">
+                將刪除資料夾內 <span className="font-bold">{grouped[pendingDeleteFolder]?.length ?? 0}</span> 筆紀錄，此操作無法復原。
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteFolder(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteFolder}
+                  disabled={deletingFolder}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {deletingFolder ? "刪除中..." : "確定刪除"}
                 </button>
               </div>
             </div>
