@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         if (result.error) {
           return NextResponse.json({ error: result.error }, { status: 400 });
         }
-        return NextResponse.json({ names: result.names, count: result.names.length });
+        return NextResponse.json({ persons: result.persons, names: result.names, count: result.persons.length });
       }
       default:
         return NextResponse.json({ error: "未知的檔案類型" }, { status: 400 });

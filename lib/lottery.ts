@@ -37,10 +37,13 @@ export function executeLottery(
 ): LotteryOutput {
   const { totalQuota: n, volunteerSlots: k, waitlistSlots: b, directAdmitNames } = config;
   const results: LotteryResultItem[] = [];
-  const excludedSet = new Set(excludedNames.map((name) => name.trim()));
+  // excludedNames contains composite keys "姓名|電話"
+  const excludedSet = new Set(excludedNames.map((k) => k.trim()));
 
-  // Step 0: Filter eligible (exclude past attendees)
-  const eligible = registrants.filter((r) => !excludedSet.has(r.name));
+  // Step 0: Filter eligible (exclude past attendees by name+phone)
+  const eligible = registrants.filter(
+    (r) => !excludedSet.has(`${r.name}|${r.phone}`)
+  );
   const excludedCount = registrants.length - eligible.length;
 
   const admittedNames = new Set<string>();

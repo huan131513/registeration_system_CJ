@@ -6,7 +6,7 @@ import { Registrant, PointsEntry } from "@/lib/types";
 interface FileUploadSectionProps {
   onRegistrationParsed: (data: Registrant[]) => void;
   onPointsParsed: (data: PointsEntry[]) => void;
-  onAttendanceParsed: (names: string[]) => void;
+  onAttendanceParsed: (keys: string[]) => void;
   registrationCount: number;
   pointsCount: number;
   attendanceNames: string[];
@@ -237,7 +237,8 @@ export default function FileUploadSection({
     setAttLoading(true);
     setAttError(null);
     try {
-      const allNames: string[] = [];
+      // Merge all files; deduplicate by 姓名|電話 composite key
+      const keySet = new Set<string>();
       for (let i = 0; i < files.length; i++) {
         const result = await uploadFile(files[i], "attendance");
         if (result.error) {
@@ -245,16 +246,17 @@ export default function FileUploadSection({
           setAttFileName(null);
           return;
         }
-        const names = (result as { names: string[] }).names;
-        allNames.push(...names);
+        const persons = (result as { persons: { name: string; phone: string }[] }).persons ?? [];
+        for (const p of persons) {
+          keySet.add(`${p.name}|${p.phone}`);
+        }
       }
-      // 多檔時顯示「X 個檔案」或單一檔名
       if (files.length === 1) {
         setAttFileName(files[0].name);
       } else {
         setAttFileName(`${files.length} 個檔案`);
       }
-      onAttendanceParsed([...new Set(allNames)]);
+      onAttendanceParsed([...keySet]);
     } catch {
       setAttError("上傳失敗，請重試");
       setAttFileName(null);
