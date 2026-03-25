@@ -44,18 +44,28 @@ export interface LotteryResultItem {
   order: number;
 }
 
+export interface LotteryStats {
+  totalRegistrants: number;
+  excludedCount: number;
+  eligibleCount: number;
+  directAdmitCount: number;
+  exemptionCount: number;
+  volunteerCount: number;
+  volunteerDrawnCount: number;
+  generalDrawnCount: number;
+  waitlistCount: number;
+  // name lists for the report
+  excludedNames: string[];
+  directAdmitNames: string[];
+  exemptedNames: string[];
+  drawnVolunteerNames: string[];
+  undrawnVolunteerNames: string[];
+  generalDrawnNames: string[];
+  waitlistedNames: string[];
+}
+
 export interface LotteryOutput {
   results: LotteryResultItem[];
   updatedPoints: PointsEntry[];
-  stats: {
-    totalRegistrants: number;
-    excludedCount: number;
-    eligibleCount: number;
-    directAdmitCount: number;
-    exemptionCount: number;
-    volunteerCount: number;
-    volunteerDrawnCount: number;
-    generalDrawnCount: number;
-    waitlistCount: number;
-  };
+  stats: LotteryStats;
 }

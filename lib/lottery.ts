@@ -41,10 +41,9 @@ export function executeLottery(
   const excludedSet = new Set(excludedNames.map((k) => k.trim()));
 
   // Step 0: Filter eligible (exclude past attendees by name+phone)
-  const eligible = registrants.filter(
-    (r) => !excludedSet.has(`${r.name}|${r.phone}`)
-  );
-  const excludedCount = registrants.length - eligible.length;
+  const excluded = registrants.filter((r) => excludedSet.has(`${r.name}|${r.phone}`));
+  const eligible = registrants.filter((r) => !excludedSet.has(`${r.name}|${r.phone}`));
+  const excludedCount = excluded.length;
 
   const admittedNames = new Set<string>();
   let orderCounter = 1;
@@ -147,6 +146,13 @@ export function executeLottery(
       volunteerDrawnCount: drawnVolunteers.length,
       generalDrawnCount: drawnGeneral.length,
       waitlistCount: waitlisted.length,
+      excludedNames: excluded.map((r) => r.name),
+      directAdmitNames: directAdmits.map((r) => r.name),
+      exemptedNames: exempted.map((r) => r.name),
+      drawnVolunteerNames: drawnVolunteers.map((r) => r.name),
+      undrawnVolunteerNames: undrawnVolunteers.map((r) => r.name),
+      generalDrawnNames: drawnGeneral.map((r) => r.name),
+      waitlistedNames: waitlisted.map((r) => r.name),
     },
   };
 }

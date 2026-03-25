@@ -7,7 +7,7 @@ import QuotaSettings from "@/components/QuotaSettings";
 import DirectAdmissionArea from "@/components/DirectAdmissionArea";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import ResultsTable from "@/components/ResultsTable";
-import { Registrant, PointsEntry, LotteryResultItem } from "@/lib/types";
+import { Registrant, PointsEntry, LotteryResultItem, LotteryStats } from "@/lib/types";
 
 type Step = "settings" | "upload" | "confirm" | "results";
 
@@ -44,6 +44,7 @@ export default function Home() {
   const [lotteryLoading, setLotteryLoading] = useState(false);
   const [results, setResults] = useState<LotteryResultItem[]>([]);
   const [updatedPoints, setUpdatedPoints] = useState<PointsEntry[]>([]);
+  const [lotteryStats, setLotteryStats] = useState<LotteryStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canProceedToUpload = courseName !== "" && year !== "" && totalQuota > 0;
@@ -85,6 +86,7 @@ export default function Home() {
 
       setResults(data.results);
       setUpdatedPoints(data.updatedPoints || []);
+      setLotteryStats(data.stats || null);
       setShowConfirm(false);
       navigateTo("results");
     } catch {
@@ -157,6 +159,7 @@ export default function Home() {
     setDirectAdmitNames([]);
     setResults([]);
     setUpdatedPoints([]);
+    setLotteryStats(null);
     setError(null);
   };
 
@@ -309,6 +312,7 @@ export default function Home() {
               courseName={courseName}
               originalPoints={pointsTable}
               updatedPoints={updatedPoints}
+              stats={lotteryStats}
               onExportResults={handleExportResults}
               onExportPoints={handleExportPoints}
               onReset={handleReset}
