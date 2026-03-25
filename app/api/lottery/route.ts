@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       const run = await prisma.lotteryRun.create({
         data: {
           courseName: config.courseName || "未命名課程",
+          year: config.year || "",
+          semester: config.semester || "",
           totalQuota: config.totalQuota,
           volunteerSlots: config.volunteerSlots,
           waitlistSlots: config.waitlistSlots,

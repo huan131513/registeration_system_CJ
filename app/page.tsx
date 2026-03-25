@@ -67,6 +67,8 @@ export default function Home() {
           excludedNames: attendanceNames,
           config: {
             courseName,
+            year,
+            semester,
             totalQuota,
             volunteerSlots,
             waitlistSlots,

@@ -20,6 +20,8 @@ model CourseOption {
 model LotteryRun {
   id                 String   @id @default(cuid())
   courseName         String
+  year               String   @default("")
+  semester           String   @default("")
   totalQuota         Int
   volunteerSlots     Int
   waitlistSlots      Int

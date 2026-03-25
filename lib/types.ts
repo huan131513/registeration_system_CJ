@@ -19,6 +19,8 @@ export interface PointsEntry {
 
 export interface LotteryConfig {
   courseName: string;
+  year: string;
+  semester: string;
   totalQuota: number;
   volunteerSlots: number;
   waitlistSlots: number;
