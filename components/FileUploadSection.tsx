@@ -191,9 +191,6 @@ export default function FileUploadSection({
   const [ptsFileName, setPtsFileName] = useState<string | null>(null);
   const [attFileName, setAttFileName] = useState<string | null>(null);
 
-  // 積分表緩存狀態
-  const [ptsCacheAge, setPtsCacheAge] = useState<number | null>(null); // minutes ago
-
   // 讀取 localStorage 積分表緩存
   useEffect(() => {
     try {
@@ -205,9 +202,8 @@ export default function FileUploadSection({
         localStorage.removeItem(POINTS_CACHE_KEY);
         return;
       }
-      // Auto-restore
+      // Auto-restore（靜默載入，不顯示提示）
       setPtsFileName(cache.fileName);
-      setPtsCacheAge(Math.floor(age / 60000));
       onPointsParsed(cache.data);
     } catch {
       localStorage.removeItem(POINTS_CACHE_KEY);
@@ -257,7 +253,6 @@ export default function FileUploadSection({
       } else {
         const data = result.data as PointsEntry[];
         setPtsFileName(files[0].name);
-        setPtsCacheAge(null); // 剛上傳，非緩存
         onPointsParsed(data);
         // 寫入 localStorage 緩存（1小時）
         try {

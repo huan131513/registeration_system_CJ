@@ -147,11 +147,11 @@ export default function Home() {
     setPointsTable([]);
     setAttendanceNames([]);
     setCourseName("");
-    setYear("");
+    setYear(String(new Date().getFullYear() - 1911));
     setSemester("春季");
-    setTotalQuota(0);
+    setTotalQuota(20);
     setVolunteerSlots(0);
-    setWaitlistSlots(0);
+    setWaitlistSlots(5);
     setDirectAdmitNames([]);
     setResults([]);
     setUpdatedPoints([]);
