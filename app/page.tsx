@@ -300,7 +300,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="text-center py-8 text-xs text-gray-400">
+      <footer className="text-center py-8 text-xs text-gray-400" suppressHydrationWarning>
         前金樂齡學習中心 © {new Date().getFullYear()}
       </footer>
     </div>
