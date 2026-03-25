@@ -1,7 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LotteryResultItem } from "@/lib/types";
+
+const SESSION_KEY = "history_authed";
+
+function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const submit = async () => {
+    if (!password) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem(SESSION_KEY, "1");
+        onUnlock();
+      } else {
+        setError("密碼錯誤，請再試一次");
+        setPassword("");
+        inputRef.current?.focus();
+      }
+    } catch {
+      setError("網路錯誤，請重試");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 w-full max-w-sm text-center">
+        <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-indigo-50 flex items-center justify-center">
+          <svg className="w-7 h-7 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-gray-800 mb-1">歷史紀錄</h2>
+        <p className="text-sm text-gray-500 mb-6">請輸入密碼以繼續</p>
+        <input
+          ref={inputRef}
+          type="password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(""); }}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder="輸入密碼"
+          className={`w-full px-4 py-3 rounded-xl border text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition mb-3 ${
+            error ? "border-red-300 bg-red-50" : "border-gray-200"
+          }`}
+        />
+        {error && (
+          <p className="text-xs text-red-500 mb-3">{error}</p>
+        )}
+        <button
+          type="button"
+          onClick={submit}
+          disabled={loading || !password}
+          className="w-full py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-40"
+        >
+          {loading ? "驗證中..." : "進入"}
+        </button>
+        <a href="/" className="block mt-4 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          ← 返回抽籤
+        </a>
+      </div>
+    </div>
+  );
+}
 
 interface LotteryRunSummary {
   id: string;
@@ -49,13 +124,24 @@ function sortResults(results: LotteryResultItem[]): LotteryResultItem[] {
 }
 
 export default function HistoryPage() {
+  const [authed, setAuthed] = useState(false);
   const [runs, setRuns] = useState<LotteryRunSummary[]>([]);
   const [selectedRun, setSelectedRun] = useState<LotteryRunDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [exportingId, setExportingId] = useState<string | null>(null);
 
+  // Check sessionStorage on mount
   useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") {
+      setAuthed(true);
+    }
+  }, []);
+
+  // Load history once authed
+  useEffect(() => {
+    if (!authed) return;
+    setLoading(true);
     fetch("/api/history")
       .then((r) => r.json())
       .then((data) => {
@@ -66,7 +152,9 @@ export default function HistoryPage() {
         setOpenFolders(folders);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authed]);
+
+  if (!authed) return <PasswordGate onUnlock={() => setAuthed(true)} />;
 
   const folderKey = (run: LotteryRunSummary) =>
     run.year && run.semester ? `${run.year}年 ${run.semester}` : "未分類";
