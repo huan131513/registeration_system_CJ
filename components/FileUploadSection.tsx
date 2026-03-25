@@ -1,7 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Registrant, PointsEntry } from "@/lib/types";
+
+const POINTS_CACHE_KEY = "pointsTable_cache";
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+interface PointsCache {
+  data: PointsEntry[];
+  fileName: string;
+  timestamp: number;
+}
 
 interface FileUploadSectionProps {
   onRegistrationParsed: (data: Registrant[]) => void;
@@ -182,6 +191,30 @@ export default function FileUploadSection({
   const [ptsFileName, setPtsFileName] = useState<string | null>(null);
   const [attFileName, setAttFileName] = useState<string | null>(null);
 
+  // 積分表緩存狀態
+  const [ptsCacheAge, setPtsCacheAge] = useState<number | null>(null); // minutes ago
+
+  // 讀取 localStorage 積分表緩存
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(POINTS_CACHE_KEY);
+      if (!raw) return;
+      const cache: PointsCache = JSON.parse(raw);
+      const age = Date.now() - cache.timestamp;
+      if (age > CACHE_TTL_MS) {
+        localStorage.removeItem(POINTS_CACHE_KEY);
+        return;
+      }
+      // Auto-restore
+      setPtsFileName(cache.fileName);
+      setPtsCacheAge(Math.floor(age / 60000));
+      onPointsParsed(cache.data);
+    } catch {
+      localStorage.removeItem(POINTS_CACHE_KEY);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const uploadFile = async (
     file: File,
     type: string
@@ -222,8 +255,15 @@ export default function FileUploadSection({
         setPtsError(result.error as string);
         setPtsFileName(null);
       } else {
+        const data = result.data as PointsEntry[];
         setPtsFileName(files[0].name);
-        onPointsParsed(result.data as PointsEntry[]);
+        setPtsCacheAge(null); // 剛上傳，非緩存
+        onPointsParsed(data);
+        // 寫入 localStorage 緩存（1小時）
+        try {
+          const cache: PointsCache = { data, fileName: files[0].name, timestamp: Date.now() };
+          localStorage.setItem(POINTS_CACHE_KEY, JSON.stringify(cache));
+        } catch { /* storage full, ignore */ }
       }
     } catch {
       setPtsError("上傳失敗，請重試");
@@ -279,17 +319,27 @@ export default function FileUploadSection({
           fileName={regFileName}
           onUpload={handleRegistration}
         />
-        <UploadCard
-          title="積分表"
-          description="學員姓名與積分的 .xlsx 檔案"
-          required
-          accept=".xlsx,.xls"
-          count={pointsCount > 0 ? pointsCount : null}
-          error={ptsError}
-          loading={ptsLoading}
-          fileName={ptsFileName}
-          onUpload={handlePoints}
-        />
+        <div className="flex flex-col gap-1.5">
+          <UploadCard
+            title="積分表"
+            description="學員姓名與積分的 .xlsx 檔案"
+            required
+            accept=".xlsx,.xls"
+            count={pointsCount > 0 ? pointsCount : null}
+            error={ptsError}
+            loading={ptsLoading}
+            fileName={ptsFileName}
+            onUpload={handlePoints}
+          />
+          {ptsCacheAge !== null && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              已從緩存自動載入（{ptsCacheAge} 分鐘前上傳）
+            </div>
+          )}
+        </div>
         <UploadCard
           title="過去上課名單"
           description="選填，可多選，用於排除已上過課的學員"
