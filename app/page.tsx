@@ -310,6 +310,8 @@ export default function Home() {
             <ResultsTable
               results={results}
               courseName={courseName}
+              year={year}
+              semester={semester}
               originalPoints={pointsTable}
               updatedPoints={updatedPoints}
               stats={lotteryStats}

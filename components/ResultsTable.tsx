@@ -7,6 +7,8 @@ import PointsTableSection from "./PointsTableSection";
 interface ResultsTableProps {
   results: LotteryResultItem[];
   courseName: string;
+  year: string;
+  semester: string;
   originalPoints: PointsEntry[];
   updatedPoints: PointsEntry[];
   stats: LotteryStats | null;
@@ -51,6 +53,8 @@ function ReportSection({ title, color, count, children }: { title: string; color
 export default function ResultsTable({
   results,
   courseName,
+  year,
+  semester,
   originalPoints,
   updatedPoints,
   stats,
@@ -59,6 +63,44 @@ export default function ResultsTable({
   onReset,
 }: ResultsTableProps) {
   const [showReport, setShowReport] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [datesInput, setDatesInput] = useState("");
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  const handleExportAttendance = async () => {
+    setAttendanceLoading(true);
+    const admitted = results.filter((r) => r.admissionType !== "waitlist");
+    const dates = datesInput
+      .split(/[、,，\s]+/)
+      .map((d) => d.trim())
+      .filter(Boolean);
+    try {
+      const res = await fetch("/api/export/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year,
+          semester,
+          courseName,
+          students: admitted.map((r) => ({ name: r.name, gender: r.gender })),
+          dates,
+        }),
+      });
+      if (!res.ok) throw new Error("匯出失敗");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${year}${semester}-${courseName || "點名單"}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setShowAttendanceModal(false);
+    } catch {
+      alert("匯出失敗，請重試");
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
   const admitted = results.filter((r) => r.admissionType !== "waitlist");
   const waitlisted = results.filter((r) => r.admissionType === "waitlist");
 
@@ -94,6 +136,16 @@ export default function ResultsTable({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             匯出更新積分表
+          </button>
+          <button
+            type="button"
+            onClick={() => { setDatesInput(""); setShowAttendanceModal(true); }}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            輸出上課點名單
           </button>
           {stats && (
             <button
@@ -271,6 +323,62 @@ export default function ResultsTable({
         updatedPoints={updatedPoints}
         courseName={courseName}
       />
+
+      {/* Attendance Export Modal */}
+      {showAttendanceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5">
+            <div>
+              <h3 className="text-base font-bold text-gray-800">輸出上課點名單</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                正取 {results.filter((r) => r.admissionType !== "waitlist").length} 人 ·{" "}
+                {year}{semester} · {courseName}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                上課日期
+                <span className="text-xs text-gray-400 font-normal ml-2">（以頓號或逗號分隔）</span>
+              </label>
+              <textarea
+                rows={3}
+                value={datesInput}
+                onChange={(e) => setDatesInput(e.target.value)}
+                placeholder="例：4/13、4/20、4/27、5/4、5/11、5/18"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none"
+              />
+              {datesInput.trim() && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {datesInput.split(/[、,，\s]+/).filter(Boolean).map((d, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-teal-50 text-teal-700 rounded-full text-xs font-medium border border-teal-100">
+                      {d.trim()}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAttendanceModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleExportAttendance}
+                disabled={attendanceLoading}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-60"
+              >
+                {attendanceLoading ? "產生中..." : "匯出 Excel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
