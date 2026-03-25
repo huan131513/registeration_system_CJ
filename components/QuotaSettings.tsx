@@ -50,12 +50,21 @@ export default function QuotaSettings({
     ]).finally(() => setLoading(false));
   }, []);
 
-  const validate = (field: string, value: number) => {
+  const isPositiveInt = (val: string) => /^\d+$/.test(val.trim()) && parseInt(val) > 0;
+  const isNonNegativeInt = (val: string) => /^\d+$/.test(val.trim());
+
+  const validate = (field: string, value: number, raw: string) => {
     const newErrors = { ...errors };
-    if (field === "volunteerSlots" && value > totalQuota) {
-      newErrors.volunteerSlots = "志工名額不可超過總錄取人數";
-    } else {
-      delete newErrors[field];
+    if (field === "totalQuota") {
+      if (!isPositiveInt(raw)) newErrors.totalQuota = "請輸入正整數";
+      else delete newErrors.totalQuota;
+    } else if (field === "volunteerSlots") {
+      if (!isNonNegativeInt(raw)) newErrors.volunteerSlots = "請輸入非負整數";
+      else if (value > totalQuota) newErrors.volunteerSlots = "志工名額不可超過總錄取人數";
+      else delete newErrors.volunteerSlots;
+    } else if (field === "waitlistSlots") {
+      if (!isNonNegativeInt(raw)) newErrors.waitlistSlots = "請輸入非負整數";
+      else delete newErrors.waitlistSlots;
     }
     setErrors(newErrors);
   };
@@ -112,6 +121,10 @@ export default function QuotaSettings({
   const handleAddYear = async () => {
     const y = newYear.trim();
     if (!y) return;
+    if (!/^\d+$/.test(y)) {
+      setAddYearError("年份必須為整數（例：114）");
+      return;
+    }
     setLoading(true);
     const res = await fetch("/api/options/years", {
       method: "POST",
@@ -357,14 +370,20 @@ export default function QuotaSettings({
           <input
             type="number"
             min={1}
+            step={1}
             value={totalQuota || ""}
             onChange={(e) => {
-              const v = parseInt(e.target.value) || 0;
+              const raw = e.target.value;
+              const v = parseInt(raw) || 0;
               onTotalQuotaChange(v);
+              validate("totalQuota", v, raw);
             }}
             placeholder="例：25"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.totalQuota ? "border-red-300" : "border-gray-200"}`}
           />
+          {errors.totalQuota && (
+            <p className="mt-1 text-xs text-red-500">{errors.totalQuota}</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -373,11 +392,13 @@ export default function QuotaSettings({
           <input
             type="number"
             min={0}
+            step={1}
             value={volunteerSlots || ""}
             onChange={(e) => {
-              const v = parseInt(e.target.value) || 0;
+              const raw = e.target.value;
+              const v = parseInt(raw) || 0;
               onVolunteerSlotsChange(v);
-              validate("volunteerSlots", v);
+              validate("volunteerSlots", v, raw);
             }}
             placeholder="例：5"
             className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
@@ -395,14 +416,20 @@ export default function QuotaSettings({
           <input
             type="number"
             min={0}
+            step={1}
             value={waitlistSlots || ""}
             onChange={(e) => {
-              const v = parseInt(e.target.value) || 0;
+              const raw = e.target.value;
+              const v = parseInt(raw) || 0;
               onWaitlistSlotsChange(v);
+              validate("waitlistSlots", v, raw);
             }}
             placeholder="例：5"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            className={`w-full px-4 py-2.5 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${errors.waitlistSlots ? "border-red-300" : "border-gray-200"}`}
           />
+          {errors.waitlistSlots && (
+            <p className="mt-1 text-xs text-red-500">{errors.waitlistSlots}</p>
+          )}
         </div>
       </div>
     </div>
