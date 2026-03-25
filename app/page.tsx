@@ -15,7 +15,7 @@ export default function Home() {
   const [step, setStep] = useState<Step>("settings");
 
   // Settings state
-  const [year, setYear] = useState("");
+  const [year, setYear] = useState(String(new Date().getFullYear() - 1911));
   const [semester, setSemester] = useState("春季");
   const [courseName, setCourseName] = useState("");
   const [totalQuota, setTotalQuota] = useState(20);
