@@ -396,23 +396,26 @@ export default function HistoryPage() {
             <p className="text-gray-400 text-sm">尚無抽籤紀錄</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {folderKeys.map((key) => (
-              <div key={key} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                {/* Folder header */}
-                <div
-                  className="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => toggleFolder(key)}
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`transition-transform duration-200 shrink-0 ${openFolders.has(key) ? "rotate-90" : "rotate-0"}`}>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                    <svg className="w-5 h-5 text-indigo-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z" />
+          <div className="space-y-6">
+            {/* ── 資料夾方形格 ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {folderKeys.map((key) => (
+                <div key={key} className="relative group">
+                  <div
+                    onClick={() => toggleFolder(key)}
+                    className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl cursor-pointer transition-all aspect-square
+                      ${openFolders.has(key)
+                        ? "bg-sky-200 ring-2 ring-sky-400 shadow-md"
+                        : "bg-sky-100 hover:bg-sky-200 shadow-sm hover:shadow-md"}`}
+                  >
+                    {/* 資料夾圖示 */}
+                    <svg className="w-14 h-14" viewBox="0 0 24 24" fill="none">
+                      <rect x="2" y="7" width="20" height="14" rx="3" fill="#7EC8F4" />
+                      <path d="M2 10V7.5C2 6.4 2.9 5.5 4 5.5H9.5L11.5 7.5H20C21.1 7.5 22 8.4 22 10" fill="#59B5EC" />
+                      <rect x="3.5" y="8.5" width="17" height="3.5" rx="1" fill="white" fillOpacity="0.25" />
                     </svg>
+
+                    {/* 名稱 / 重新命名輸入框 */}
                     {renamingKey === key ? (
                       <input
                         ref={renameInputRef}
@@ -425,168 +428,184 @@ export default function HistoryPage() {
                         }}
                         onBlur={commitRename}
                         onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-gray-800 bg-white border border-indigo-400 rounded-lg px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 flex-1"
+                        className="w-full text-center text-sm font-semibold text-gray-800 bg-white border border-indigo-400 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     ) : (
-                      <span className="font-semibold text-gray-800 truncate">
+                      <span className="text-sm font-semibold text-gray-800 text-center leading-tight line-clamp-2 px-1">
                         {folderLabels[key] ?? key}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
+
+                    <span className="text-xs text-sky-600 bg-white/60 px-2 py-0.5 rounded-full">
                       {grouped[key].length} 筆
                     </span>
                   </div>
-                  {/* Rename button */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); startRename(key, e); }}
-                    title="重新命名資料夾"
-                    className="ml-3 p-1.5 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  {/* Delete folder button */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setPendingDeleteFolder(key); }}
-                    title="刪除整個資料夾"
-                    className="ml-1 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+
+                  {/* 重新命名 / 刪除 — 滑鼠移入才顯示 */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); startRename(key, e); }}
+                      title="重新命名"
+                      className="p-1.5 rounded-lg bg-white/80 text-gray-400 hover:text-indigo-500 hover:bg-white shadow-sm transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setPendingDeleteFolder(key); }}
+                      title="刪除資料夾"
+                      className="p-1.5 rounded-lg bg-white/80 text-gray-300 hover:text-red-500 hover:bg-white shadow-sm transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── 展開的資料夾內容 ── */}
+            {folderKeys.filter((k) => openFolders.has(k)).map((key) => (
+              <div key={key} className="rounded-2xl border border-sky-100 bg-white shadow-sm overflow-hidden">
+                {/* 資料夾標題列 */}
+                <div className="flex items-center gap-2 px-6 py-3 bg-sky-50 border-b border-sky-100">
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="7" width="20" height="14" rx="3" fill="#7EC8F4" />
+                    <path d="M2 10V7.5C2 6.4 2.9 5.5 4 5.5H9.5L11.5 7.5H20C21.1 7.5 22 8.4 22 10" fill="#59B5EC" />
+                  </svg>
+                  <span className="font-semibold text-gray-700 text-sm">{folderLabels[key] ?? key}</span>
+                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{grouped[key].length} 筆</span>
                 </div>
 
-                {/* Folder contents */}
-                {openFolders.has(key) && (
-                  <div className="border-t border-gray-100 divide-y divide-gray-50">
-                    {grouped[key].map((run) => (
-                      <div key={run.id} className="border-b border-gray-50 last:border-0">
-                        <div
-                          className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/60 transition-colors cursor-pointer"
-                          onClick={() => loadDetail(run.id)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-800 truncate">{run.courseName}</h3>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {new Date(run.createdAt).toLocaleString("zh-TW")}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4 flex-shrink-0 flex-wrap justify-end">
-                            <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
-                              錄取 {run.totalQuota} 人
-                            </span>
-                            {/* Process toggle */}
-                            <button
-                              type="button"
-                              onClick={(e) => toggleProcess(run.id, e)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                                processRunId === run.id
-                                  ? "bg-indigo-50 border-indigo-200 text-indigo-700"
-                                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                              }`}
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              抽籤過程
-                            </button>
-                            <button
-                              type="button"
-                              disabled={exportingId === run.id}
-                              onClick={(e) => handleExport(run, e)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                            >
-                              {exportingId === run.id ? (
-                                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                              )}
-                              匯出抽籤結果
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setAttClassDates([]); setAttDateInputVal(""); setAttDateError(""); setAttendanceRun(run); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition-colors"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                              </svg>
-                              匯出點名單
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setPendingDeleteId(run.id); }}
-                              title="刪除此紀錄"
-                              className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
+                {/* 紀錄列表 */}
+                <div className="divide-y divide-gray-50">
+                  {grouped[key].map((run) => (
+                    <div key={run.id} className="border-b border-gray-50 last:border-0">
+                      <div
+                        className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/60 transition-colors cursor-pointer"
+                        onClick={() => loadDetail(run.id)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-800 truncate">{run.courseName}</h3>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {new Date(run.createdAt).toLocaleString("zh-TW")}
+                          </p>
                         </div>
+                        <div className="flex items-center gap-2 ml-4 flex-shrink-0 flex-wrap justify-end">
+                          <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
+                            錄取 {run.totalQuota} 人
+                          </span>
+                          {/* Process toggle */}
+                          <button
+                            type="button"
+                            onClick={(e) => toggleProcess(run.id, e)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                              processRunId === run.id
+                                ? "bg-indigo-50 border-indigo-200 text-indigo-700"
+                                : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            抽籤過程
+                          </button>
+                          <button
+                            type="button"
+                            disabled={exportingId === run.id}
+                            onClick={(e) => handleExport(run, e)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                          >
+                            {exportingId === run.id ? (
+                              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            )}
+                            匯出抽籤結果
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setAttClassDates([]); setAttDateInputVal(""); setAttDateError(""); setAttendanceRun(run); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            匯出點名單
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setPendingDeleteId(run.id); }}
+                            title="刪除此紀錄"
+                            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
 
-                        {/* Inline process panel */}
-                        {processRunId === run.id && (
-                          <div className="px-6 pb-5 bg-indigo-50/40 border-t border-indigo-100">
-                            {processLoading && processDetail?.id !== run.id ? (
-                              <p className="text-xs text-gray-400 py-4 text-center">載入中...</p>
-                            ) : processDetail?.id === run.id ? (() => {
-                              const byType = (type: string) =>
-                                processDetail.results.filter((r) => r.admissionType === type);
-                              const section = (title: string, bg: string, items: LotteryResultItem[], extra?: string) => (
-                                items.length > 0 ? (
-                                  <div className={`rounded-xl p-3 ${bg}`}>
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                      <span className="text-xs font-semibold text-gray-700">{title}</span>
-                                      <span className="text-xs text-gray-400 bg-white/70 px-1.5 py-0.5 rounded-full">{items.length} 人</span>
-                                      {extra && <span className="text-xs text-gray-400">{extra}</span>}
-                                    </div>
-                                    <div className="flex flex-wrap gap-1">
-                                      {items.map((r) => (
-                                        <span key={r.name} className="px-2 py-0.5 bg-white border border-gray-200 rounded-full text-xs text-gray-700">{r.name}</span>
-                                      ))}
-                                    </div>
+                      {/* Inline process panel */}
+                      {processRunId === run.id && (
+                        <div className="px-6 pb-5 bg-indigo-50/40 border-t border-indigo-100">
+                          {processLoading && processDetail?.id !== run.id ? (
+                            <p className="text-xs text-gray-400 py-4 text-center">載入中...</p>
+                          ) : processDetail?.id === run.id ? (() => {
+                            const byType = (type: string) =>
+                              processDetail.results.filter((r) => r.admissionType === type);
+                            const section = (title: string, bg: string, items: LotteryResultItem[], extra?: string) => (
+                              items.length > 0 ? (
+                                <div className={`rounded-xl p-3 ${bg}`}>
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-xs font-semibold text-gray-700">{title}</span>
+                                    <span className="text-xs text-gray-400 bg-white/70 px-1.5 py-0.5 rounded-full">{items.length} 人</span>
+                                    {extra && <span className="text-xs text-gray-400">{extra}</span>}
                                   </div>
-                                ) : null
-                              );
-                              return (
-                                <div className="pt-4 space-y-2">
-                                  <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {[
-                                      { label: "總報名", value: run.totalRegistrants },
-                                      { label: "錄取人數", value: run.totalQuota },
-                                      { label: "排除人數", value: run.excludedCount },
-                                    ].map(({ label, value }) => (
-                                      <div key={label} className="bg-white rounded-xl px-3 py-2 border border-gray-100 text-center">
-                                        <p className="text-lg font-bold text-gray-800">{value}</p>
-                                        <p className="text-xs text-gray-400">{label}</p>
-                                      </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {items.map((r) => (
+                                      <span key={r.name} className="px-2 py-0.5 bg-white border border-gray-200 rounded-full text-xs text-gray-700">{r.name}</span>
                                     ))}
                                   </div>
-                                  {section("直接錄取（優先錄取）", "bg-purple-50", byType("direct"))}
-                                  {section("免抽籤錄取", "bg-blue-50", byType("exemption"))}
-                                  {section("志工名額抽籤 — 抽中", "bg-emerald-50", byType("volunteer_lottery"))}
-                                  {section("一般抽籤 — 抽中", "bg-gray-100", byType("general_lottery"))}
-                                  {section("備取名單", "bg-amber-50", byType("waitlist"))}
                                 </div>
-                              );
-                            })() : null}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                              ) : null
+                            );
+                            return (
+                              <div className="pt-4 space-y-2">
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                  {[
+                                    { label: "總報名", value: run.totalRegistrants },
+                                    { label: "錄取人數", value: run.totalQuota },
+                                    { label: "排除人數", value: run.excludedCount },
+                                  ].map(({ label, value }) => (
+                                    <div key={label} className="bg-white rounded-xl px-3 py-2 border border-gray-100 text-center">
+                                      <p className="text-lg font-bold text-gray-800">{value}</p>
+                                      <p className="text-xs text-gray-400">{label}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                                {section("直接錄取（優先錄取）", "bg-purple-50", byType("direct"))}
+                                {section("免抽籤錄取", "bg-blue-50", byType("exemption"))}
+                                {section("志工名額抽籤 — 抽中", "bg-emerald-50", byType("volunteer_lottery"))}
+                                {section("一般抽籤 — 抽中", "bg-gray-100", byType("general_lottery"))}
+                                {section("備取名單", "bg-amber-50", byType("waitlist"))}
+                              </div>
+                            );
+                          })() : null}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
