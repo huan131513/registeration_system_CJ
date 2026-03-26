@@ -128,7 +128,7 @@ export default function HistoryPage() {
   const [runs, setRuns] = useState<LotteryRunSummary[]>([]);
   const [selectedRun, setSelectedRun] = useState<LotteryRunDetail | null>(null);
   const [loading, setLoading] = useState(false);
-  const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [attendanceRun, setAttendanceRun] = useState<LotteryRunSummary | null>(null);
   const [attClassDates, setAttClassDates] = useState<string[]>([]);
@@ -169,8 +169,7 @@ export default function HistoryPage() {
         const list: LotteryRunSummary[] = histData.runs || [];
         setRuns(list);
         setFolderLabels(labelData.labels || {});
-        const folders = new Set(list.map((r) => folderKey(r)));
-        setOpenFolders(folders);
+        // start with no folder open
       })
       .finally(() => setLoading(false));
   }, [authed]);
@@ -192,12 +191,7 @@ export default function HistoryPage() {
   const folderKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a, "zh-TW"));
 
   const toggleFolder = (key: string) => {
-    setOpenFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setOpenFolder((prev) => (prev === key ? null : key));
   };
 
   const startRename = (key: string, e: React.MouseEvent) => {
@@ -396,17 +390,20 @@ export default function HistoryPage() {
             <p className="text-gray-400 text-sm">尚無抽籤紀錄</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6" onClick={(e) => { if (e.target === e.currentTarget) setOpenFolder(null); }}>
             {/* ── 資料夾方形格 ── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-2"
+              onClick={(e) => { if (e.target === e.currentTarget) setOpenFolder(null); }}
+            >
               {folderKeys.map((key) => (
                 <div key={key} className="relative group">
                   <div
                     onClick={() => toggleFolder(key)}
                     className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl cursor-pointer transition-all aspect-square
-                      ${openFolders.has(key)
-                        ? "bg-sky-200 ring-2 ring-sky-400 shadow-md"
-                        : "bg-sky-100 hover:bg-sky-200 shadow-sm hover:shadow-md"}`}
+                      ${openFolder === key
+                        ? "bg-sky-100 shadow-md"
+                        : "bg-white/60 hover:bg-gray-100 shadow-sm hover:shadow-md"}`}
                   >
                     {/* 資料夾圖示 */}
                     <svg className="w-14 h-14" viewBox="0 0 24 24" fill="none">
@@ -469,7 +466,7 @@ export default function HistoryPage() {
             </div>
 
             {/* ── 展開的資料夾內容 ── */}
-            {folderKeys.filter((k) => openFolders.has(k)).map((key) => (
+            {folderKeys.filter((k) => openFolder === k).map((key) => (
               <div key={key} className="rounded-2xl border border-sky-100 bg-white shadow-sm overflow-hidden">
                 {/* 資料夾標題列 */}
                 <div className="flex items-center gap-2 px-6 py-3 bg-sky-50 border-b border-sky-100">
