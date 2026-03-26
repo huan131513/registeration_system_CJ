@@ -565,8 +565,8 @@ export default function HistoryPage() {
                                   <div className="grid grid-cols-3 gap-2 mb-3">
                                     {[
                                       { label: "總報名", value: run.totalRegistrants },
-                                      { label: "已排除", value: run.excludedCount },
-                                      { label: "有效報名", value: run.totalRegistrants - run.excludedCount },
+                                      { label: "錄取人數", value: run.totalQuota },
+                                      { label: "排除人數", value: run.excludedCount },
                                     ].map(({ label, value }) => (
                                       <div key={label} className="bg-white rounded-xl px-3 py-2 border border-gray-100 text-center">
                                         <p className="text-lg font-bold text-gray-800">{value}</p>

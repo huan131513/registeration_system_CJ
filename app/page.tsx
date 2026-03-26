@@ -8,6 +8,7 @@ import DirectAdmissionArea from "@/components/DirectAdmissionArea";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import ResultsTable from "@/components/ResultsTable";
 import { Registrant, PointsEntry, LotteryResultItem, LotteryStats } from "@/lib/types";
+import HelpModal from "@/components/HelpModal";
 
 type Step = "settings" | "upload" | "confirm" | "results";
 
@@ -174,12 +175,15 @@ export default function Home() {
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">課程報名抽籤系統</p>
           </div>
-          <a
-            href="/history"
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
-          >
-            歷史紀錄 →
-          </a>
+          <div className="flex items-center gap-3">
+            <HelpModal />
+            <a
+              href="/history"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+            >
+              歷史紀錄 →
+            </a>
+          </div>
         </div>
       </header>
 

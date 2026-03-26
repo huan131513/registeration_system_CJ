@@ -227,9 +227,9 @@ export default function ResultsTable({
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">資料前處理</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               {[
-                { label: "總報名人數", value: stats.totalRegistrants },
-                { label: "已排除（上過課）", value: stats.excludedCount },
-                { label: "有效報名人數", value: stats.eligibleCount },
+                { label: "總報名", value: stats.totalRegistrants },
+                { label: "錄取人數", value: stats.directAdmitCount + stats.exemptionCount + stats.volunteerDrawnCount + stats.generalDrawnCount },
+                { label: "排除人數", value: stats.excludedCount },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-white rounded-xl px-4 py-3 border border-gray-100 text-center">
                   <p className="text-2xl font-bold text-gray-800">{value}</p>
