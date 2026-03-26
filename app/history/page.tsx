@@ -400,12 +400,11 @@ export default function HistoryPage() {
             {folderKeys.map((key) => (
               <div key={key} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
                 {/* Folder header */}
-                <div className="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors">
-                  <button
-                    type="button"
-                    onClick={() => toggleFolder(key)}
-                    className="flex items-center gap-3 flex-1 min-w-0"
-                  >
+                <div
+                  className="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => toggleFolder(key)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`transition-transform duration-200 shrink-0 ${openFolders.has(key) ? "rotate-90" : "rotate-0"}`}>
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -436,11 +435,11 @@ export default function HistoryPage() {
                     <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
                       {grouped[key].length} 筆
                     </span>
-                  </button>
+                  </div>
                   {/* Rename button */}
                   <button
                     type="button"
-                    onClick={(e) => startRename(key, e)}
+                    onClick={(e) => { e.stopPropagation(); startRename(key, e); }}
                     title="重新命名資料夾"
                     className="ml-3 p-1.5 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors shrink-0"
                   >

@@ -24,3 +24,44 @@ body {
   background-color: var(--gray-50);
   color: var(--gray-800);
 }
+
+/* ── 游標規則 ─────────────────────────────────── */
+
+/* 可點擊元件 → 手指 */
+a,
+button:not(:disabled),
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+[role="switch"],
+[role="checkbox"],
+[role="radio"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="file"],
+input[type="file"]::-webkit-file-upload-button,
+select:not(:disabled),
+label[for],
+summary {
+  cursor: pointer;
+}
+
+/* 文字輸入框 → 文字游標 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"])
+  :not([type="button"]):not([type="reset"]):not([type="file"]),
+textarea {
+  cursor: text;
+}
+
+/* 停用狀態 → 禁止符號 */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
