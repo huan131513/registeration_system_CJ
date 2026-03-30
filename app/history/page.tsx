@@ -349,7 +349,7 @@ export default function HistoryPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${detail.year}${detail.semester}-${detail.courseName || "點名單"}.xlsx`;
+      a.download = `學員點名單-${detail.year}${detail.semester}-${detail.courseName || "課程"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
       setAttendanceRun(null);

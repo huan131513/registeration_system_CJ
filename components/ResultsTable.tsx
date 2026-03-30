@@ -130,7 +130,7 @@ export default function ResultsTable({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${year}${semester}-${courseName || "點名單"}.xlsx`;
+      a.download = `學員點名單-${year}${semester}-${courseName || "課程"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
       setShowAttendanceModal(false);
