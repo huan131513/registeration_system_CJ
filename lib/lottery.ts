@@ -40,9 +40,11 @@ export function executeLottery(
   // excludedNames contains composite keys "姓名|電話"
   const excludedSet = new Set(excludedNames.map((k) => k.trim()));
 
-  // Step 0: Filter eligible (exclude past attendees by name+phone)
-  const excluded = registrants.filter((r) => excludedSet.has(`${r.name}|${r.phone}`));
-  const eligible = registrants.filter((r) => !excludedSet.has(`${r.name}|${r.phone}`));
+  // Step 0: Filter eligible (exclude past attendees by name+phone composite, or name-only if no phone in attendance)
+  const isExcluded = (r: Registrant) =>
+    excludedSet.has(`${r.name}|${r.phone}`) || excludedSet.has(r.name);
+  const excluded = registrants.filter(isExcluded);
+  const eligible = registrants.filter((r) => !isExcluded(r));
   const excludedCount = excluded.length;
 
   const admittedNames = new Set<string>();

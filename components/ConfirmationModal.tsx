@@ -32,10 +32,10 @@ export default function ConfirmationModal({
 }: ConfirmationModalProps) {
   if (!open) return null;
 
-  // Filter eligible by name+phone composite key
+  // Filter eligible by name+phone composite key, or name-only if no phone in attendance
   const excludedSet = new Set(excludedNames.map((k) => k.trim()));
   const eligible = registrants.filter(
-    (r) => !excludedSet.has(`${r.name}|${r.phone}`)
+    (r) => !excludedSet.has(`${r.name}|${r.phone}`) && !excludedSet.has(r.name)
   );
   const volunteers = eligible.filter(
     (r) => r.volunteerStatus === "樂齡志工" || r.volunteerStatus === "志工團" || r.volunteerStatus === "故事媽媽"

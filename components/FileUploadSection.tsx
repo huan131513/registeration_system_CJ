@@ -274,7 +274,8 @@ export default function FileUploadSection({
         }
         const persons = (result as { persons: { name: string; phone: string }[] }).persons ?? [];
         for (const p of persons) {
-          keySet.add(`${p.name}|${p.phone}`);
+          // If no phone data, store name-only so name-based exclusion still works
+          keySet.add(p.phone ? `${p.name}|${p.phone}` : p.name);
         }
       }
       const names = Array.from(files).map((f) => f.name);
