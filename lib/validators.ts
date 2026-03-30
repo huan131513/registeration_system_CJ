@@ -1,5 +1,4 @@
 const REGISTRATION_HEADERS = [
-  "時間戳記",
   "姓名",
   "電話（儘量填手機）",
   "性別",
