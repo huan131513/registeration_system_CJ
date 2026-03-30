@@ -119,6 +119,7 @@ export function executeLottery(
     results.push(toResultItem(student, "general_lottery", orderCounter++));
     admittedNames.add(student.name);
   }
+  slotsLeft -= drawnGeneral.length;
 
   // Step 5: Supplemental draw from excluded pool (if slots still remain)
   const supplementalPool = excluded.filter((r) => !admittedNames.has(r.name));
