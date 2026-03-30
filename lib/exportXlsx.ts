@@ -81,11 +81,11 @@ export function generateAttendanceXlsx(
   const totalCols = 3 + (dates.length || 1);
 
   const titleRow = [
-    `${year}年度前金樂齡學習中心-${semester}班\n學員點名單`,
+    `${courseName} 學員點名單`,
     ...Array(totalCols - 1).fill(""),
   ];
   const emptyRow = Array(totalCols).fill("");
-  const classRow = [`  班別：${courseName}`, ...Array(totalCols - 1).fill("")];
+  const classRow = [`  ${year}年度前金樂齡學習中心-${semester}班`, ...Array(totalCols - 1).fill("")];
   const headerRow = ["序號", "姓名", "性別", ...dates];
   const studentRows = students.map((s, i) => [
     String(i + 1),
