@@ -38,7 +38,7 @@ export default function ConfirmationModal({
     (r) => !excludedSet.has(`${r.name}|${r.phone}`)
   );
   const volunteers = eligible.filter(
-    (r) => r.volunteerStatus === "樂齡志工" || r.volunteerStatus === "志工團"
+    (r) => r.volunteerStatus === "樂齡志工" || r.volunteerStatus === "志工團" || r.volunteerStatus === "故事媽媽"
   );
   const exemptions = eligible.filter((r) => r.lotteryExemption === "是");
 

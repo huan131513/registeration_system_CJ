@@ -87,7 +87,7 @@ export function executeLottery(
   // Step 3: Volunteer lottery
   const remaining = eligible.filter((r) => !admittedNames.has(r.name));
   const volunteerPool = remaining.filter(
-    (r) => r.volunteerStatus === "樂齡志工" || r.volunteerStatus === "志工團"
+    (r) => r.volunteerStatus === "樂齡志工" || r.volunteerStatus === "志工團" || r.volunteerStatus === "故事媽媽"
   );
 
   const volunteerDrawCount = Math.min(k, slotsLeft, volunteerPool.length);
