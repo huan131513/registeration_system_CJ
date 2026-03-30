@@ -103,6 +103,7 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   volunteer_lottery:{ label: "志工抽籤", color: "bg-emerald-100 text-emerald-700" },
   exemption:        { label: "免抽籤",   color: "bg-blue-100 text-blue-700" },
   general_lottery:  { label: "一般抽籤", color: "bg-gray-100 text-gray-700" },
+  supplemental:     { label: "補額抽籤", color: "bg-orange-100 text-orange-700" },
   waitlist:         { label: "備取",     color: "bg-amber-100 text-amber-700" },
 };
 
@@ -111,7 +112,8 @@ const TYPE_ORDER: Record<string, number> = {
   volunteer_lottery: 1,
   exemption: 2,
   general_lottery: 3,
-  waitlist: 4,
+  supplemental: 4,
+  waitlist: 5,
 };
 
 function sortResults(results: LotteryResultItem[]): LotteryResultItem[] {
@@ -594,6 +596,7 @@ export default function HistoryPage() {
                                 {section("免抽籤錄取", "bg-blue-50", byType("exemption"))}
                                 {section("志工名額抽籤 — 抽中", "bg-emerald-50", byType("volunteer_lottery"))}
                                 {section("一般抽籤 — 抽中", "bg-gray-100", byType("general_lottery"))}
+                                {byType("supplemental").length > 0 && section("補額抽籤（從排除名單補抽）", "bg-orange-50", byType("supplemental"))}
                                 {section("備取名單", "bg-amber-50", byType("waitlist"))}
                               </div>
                             );

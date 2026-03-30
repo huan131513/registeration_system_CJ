@@ -120,7 +120,20 @@ export function executeLottery(
     admittedNames.add(student.name);
   }
 
-  // Step 5: Waitlist
+  // Step 5: Supplemental draw from excluded pool (if slots still remain)
+  const supplementalPool = excluded.filter((r) => !admittedNames.has(r.name));
+  const supplementalDrawCount = Math.min(slotsLeft, supplementalPool.length);
+  const shuffledSupplemental = secureShuffle(supplementalPool);
+  const drawnSupplemental = shuffledSupplemental.slice(0, supplementalDrawCount);
+
+  orderCounter = 1;
+  for (const student of drawnSupplemental) {
+    results.push(toResultItem(student, "supplemental", orderCounter++));
+    admittedNames.add(student.name);
+  }
+  slotsLeft -= drawnSupplemental.length;
+
+  // Step 6: Waitlist
   const waitlistDrawCount = Math.min(b, remainingAfterGeneral.length);
   const waitlisted = remainingAfterGeneral.slice(0, waitlistDrawCount);
 
@@ -147,6 +160,7 @@ export function executeLottery(
       volunteerCount: volunteerPool.length,
       volunteerDrawnCount: drawnVolunteers.length,
       generalDrawnCount: drawnGeneral.length,
+      supplementalDrawnCount: drawnSupplemental.length,
       waitlistCount: waitlisted.length,
       excludedNames: excluded.map((r) => r.name),
       directAdmitNames: directAdmits.map((r) => r.name),
@@ -154,6 +168,7 @@ export function executeLottery(
       drawnVolunteerNames: drawnVolunteers.map((r) => r.name),
       undrawnVolunteerNames: undrawnVolunteers.map((r) => r.name),
       generalDrawnNames: drawnGeneral.map((r) => r.name),
+      supplementalDrawnNames: drawnSupplemental.map((r) => r.name),
       waitlistedNames: waitlisted.map((r) => r.name),
     },
   };

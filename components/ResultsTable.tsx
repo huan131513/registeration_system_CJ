@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   exemption: { label: "免抽籤", color: "bg-blue-100 text-blue-700" },
   volunteer_lottery: { label: "志工抽籤", color: "bg-emerald-100 text-emerald-700" },
   general_lottery: { label: "一般抽籤", color: "bg-gray-100 text-gray-700" },
+  supplemental: { label: "補額抽籤", color: "bg-orange-100 text-orange-700" },
   waitlist: { label: "備取", color: "bg-amber-100 text-amber-700" },
 };
 
@@ -269,6 +270,12 @@ export default function ResultsTable({
               <ReportSection title="一般抽籤 — 抽中" color="bg-gray-100" count={stats.generalDrawnCount}>
                 <NameList names={stats.generalDrawnNames} emptyText="（無一般抽中）" />
               </ReportSection>
+              {stats.supplementalDrawnCount > 0 && (
+                <ReportSection title="補額抽籤（從排除名單補抽）" color="bg-orange-50" count={stats.supplementalDrawnCount}>
+                  <p className="text-xs text-orange-600 mb-1.5">一般名額不足，從過去上課名單中隨機補抽</p>
+                  <NameList names={stats.supplementalDrawnNames} />
+                </ReportSection>
+              )}
               {stats.waitlistCount > 0 && (
                 <ReportSection title="備取名單" color="bg-amber-50" count={stats.waitlistCount}>
                   <NameList names={stats.waitlistedNames} />

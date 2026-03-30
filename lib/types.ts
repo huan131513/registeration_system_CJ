@@ -40,6 +40,7 @@ export interface LotteryResultItem {
     | "exemption"
     | "volunteer_lottery"
     | "general_lottery"
+    | "supplemental"
     | "waitlist";
   order: number;
 }
@@ -54,6 +55,7 @@ export interface LotteryStats {
   volunteerDrawnCount: number;
   generalDrawnCount: number;
   waitlistCount: number;
+  supplementalDrawnCount: number;
   // name lists for the report
   excludedNames: string[];
   directAdmitNames: string[];
@@ -61,6 +63,7 @@ export interface LotteryStats {
   drawnVolunteerNames: string[];
   undrawnVolunteerNames: string[];
   generalDrawnNames: string[];
+  supplementalDrawnNames: string[];
   waitlistedNames: string[];
 }
 
