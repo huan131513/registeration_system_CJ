@@ -31,7 +31,7 @@ export default function Home() {
   const [semester, setSemester] = useState("春季");
   const [courseName, setCourseName] = useState("");
   const [totalQuota, setTotalQuota] = useState(20);
-  const [volunteerSlots, setVolunteerSlots] = useState(0);
+  const [volunteerSlots, setVolunteerSlots] = useState(4);
   const [waitlistSlots, setWaitlistSlots] = useState(5);
   const [directAdmitNames, setDirectAdmitNames] = useState<string[]>([]);
 
@@ -48,12 +48,50 @@ export default function Home() {
   const [lotteryStats, setLotteryStats] = useState<LotteryStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [skipLottery, setSkipLottery] = useState(false);
+
   const canProceedToUpload = courseName !== "" && year !== "" && totalQuota > 0;
   const canProceedToConfirm = registrants.length > 0 && pointsTable.length > 0;
+  const canProceedToSkip = registrants.length > 0;
 
   const handleStartLottery = () => {
     navigateTo("confirm");
     setTimeout(() => setShowConfirm(true), 500);
+  };
+
+  const handleSkipLottery = async () => {
+    setLotteryLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/lottery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrants,
+          pointsTable,
+          excludedNames: attendanceNames,
+          config: {
+            courseName,
+            year,
+            semester,
+            totalQuota: registrants.length,
+            volunteerSlots: 0,
+            waitlistSlots: 0,
+            directAdmitNames,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "錄取失敗"); return; }
+      setResults(data.results);
+      setUpdatedPoints(data.updatedPoints || []);
+      setLotteryStats(data.stats || null);
+      navigateTo("results");
+    } catch {
+      setError("網路錯誤，請重試");
+    } finally {
+      setLotteryLoading(false);
+    }
   };
 
   const handleConfirmLottery = async () => {
@@ -111,7 +149,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${year}${semester}-${courseName || "抽籤結果"}.xlsx`;
+      a.download = `抽籤結果-${year}${semester}-${courseName || "課程"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -162,6 +200,7 @@ export default function Home() {
     setUpdatedPoints([]);
     setLotteryStats(null);
     setError(null);
+    setSkipLottery(false);
   };
 
   return (
@@ -217,7 +256,15 @@ export default function Home() {
               onSemesterChange={setSemester}
             />
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex items-center justify-between">
+              <button
+                type="button"
+                disabled={!canProceedToUpload}
+                onClick={() => { setSkipLottery(true); navigateTo("upload"); }}
+                className="px-5 py-2.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                跳過抽籤（全額錄取）
+              </button>
               <button
                 type="button"
                 disabled={!canProceedToUpload}
@@ -270,19 +317,30 @@ export default function Home() {
             <div className="mt-8 flex justify-between">
               <button
                 type="button"
-                onClick={() => navigateTo("settings")}
+                onClick={() => { setSkipLottery(false); navigateTo("settings"); }}
                 className="px-6 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 ← 上一步
               </button>
-              <button
-                type="button"
-                disabled={!canProceedToConfirm}
-                onClick={handleStartLottery}
-                className="px-6 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                確認並抽籤
-              </button>
+              {skipLottery ? (
+                <button
+                  type="button"
+                  disabled={!canProceedToSkip || lotteryLoading}
+                  onClick={handleSkipLottery}
+                  className="px-6 py-3 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {lotteryLoading ? "處理中…" : "全額錄取 →"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!canProceedToConfirm}
+                  onClick={handleStartLottery}
+                  className="px-6 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  確認並抽籤
+                </button>
+              )}
             </div>
           </div>
         )}
