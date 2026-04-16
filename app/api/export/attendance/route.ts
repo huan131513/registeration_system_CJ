@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "無學員資料" }, { status: 400 });
     }
 
-    const buffer = generateAttendanceXlsx(
+    const buffer = await generateAttendanceXlsx(
       year || "",
       semester || "",
       courseName || "課程",

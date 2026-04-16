@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { LotteryResultItem, PointsEntry } from "./types";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -70,57 +71,75 @@ export function generateResultXlsx(
   return Buffer.from(buf);
 }
 
-export function generateAttendanceXlsx(
+export async function generateAttendanceXlsx(
   year: string,
   semester: string,
   courseName: string,
   students: { name: string; gender: string }[],
   dates: string[]
-): Buffer {
-  const wb = XLSX.utils.book_new();
+): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
   const totalCols = 3 + (dates.length || 1);
-
-  const titleRow = [
-    `${courseName} 學員點名單`,
-    ...Array(totalCols - 1).fill(""),
-  ];
-  const emptyRow = Array(totalCols).fill("");
-  const classRow = [`  ${year}年度前金樂齡學習中心-${semester}班`, ...Array(totalCols - 1).fill("")];
-  const headerRow = ["序號", "姓名", "性別", ...dates];
-  const studentRows = students.map((s, i) => [
-    String(i + 1),
-    s.name,
-    s.gender,
-    ...Array(dates.length || 1).fill(""),
-  ]);
-
-  const aoa = [titleRow, emptyRow, classRow, headerRow, ...studentRows];
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } },
-  ];
-
-  ws["!cols"] = [
-    { wch: 8 },
-    { wch: 12 },
-    { wch: 6 },
-    ...Array(dates.length || 1).fill({ wch: 8 }),
-  ];
-
-  ws["!rows"] = [
-    { hpt: 40 },
-    { hpt: 6 },
-    { hpt: 22 },
-    { hpt: 18 },
-  ];
-
   const sheetName = `${year}${semester}-${courseName}`.slice(0, 31);
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const ws = wb.addWorksheet(sheetName);
 
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  return Buffer.from(buf);
+  const colWidths = [6.0, 11.44140625, 6.77734375, 15.77734375, 13.0, 13.0];
+  for (let i = 1; i <= totalCols; i++) {
+    ws.getColumn(i).width = colWidths[i - 1] ?? 15.77734375;
+  }
+
+  const thinBorder: Partial<ExcelJS.Borders> = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" },
+  };
+
+  const applyStyle = (cell: ExcelJS.Cell) => {
+    cell.font = { name: "新細明體", size: 12 };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = thinBorder;
+  };
+
+  // Row 1: Title
+  const titleRow = ws.addRow([
+    `${year}年度前金樂齡學習中心-${semester}班學員點名單`,
+    ...Array(totalCols - 1).fill(""),
+  ]);
+  titleRow.height = 40.05;
+  ws.mergeCells(1, 1, 1, totalCols);
+
+  // Row 2: Class info
+  const classRow = ws.addRow([
+    `班別：${courseName}`,
+    ...Array(totalCols - 1).fill(""),
+  ]);
+  classRow.height = 30;
+  ws.mergeCells(2, 1, 2, totalCols);
+
+  // Row 3: Headers
+  const headerRow = ws.addRow(["序號", "姓名", "性別", ...dates]);
+  headerRow.height = 30;
+
+  // Student rows
+  students.forEach((s, i) => {
+    const row = ws.addRow([
+      String(i + 1),
+      s.name,
+      s.gender,
+      ...Array(dates.length || 1).fill(""),
+    ]);
+    row.height = 30;
+  });
+
+  ws.eachRow((row) => {
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      applyStyle(cell);
+    });
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
 }
 
 export function generatePointsXlsx(
